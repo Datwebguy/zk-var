@@ -9,61 +9,8 @@ export const useAppStore = create((set, get) => ({
   chainId: null,
 
   // Prediction Markets & Dispute State
-  predictionPools: [
-    {
-      poolId: 1,
-      question: "Will the VAR check rule Messi's 42nd minute goal OFFSIDE?",
-      closingTime: Math.floor(Date.now() / 1000) + 1200,
-      status: 0, // Open
-      totalStaked: '4.85',
-      stakedOutcome1: '3.10',
-      stakedOutcome2: '1.75',
-      winningOutcome: 0,
-      disputeId: 101,
-      match: "Argentina vs France"
-    },
-    {
-      poolId: 2,
-      question: "Was the ball completely out of bounds before Mbappe's assist?",
-      closingTime: Math.floor(Date.now() / 1000) + 3600,
-      status: 0, // Open
-      totalStaked: '12.40',
-      stakedOutcome1: '2.40',
-      stakedOutcome2: '10.00',
-      winningOutcome: 0,
-      disputeId: 102,
-      match: "Argentina vs France"
-    }
-  ],
-  
-  disputes: [
-    {
-      playId: 101,
-      predictionPoolId: 1,
-      description: "Messi 42' - Possible offside detection on run-up.",
-      votingEndTime: Math.floor(Date.now() / 1000) + 1200,
-      status: 0, // Active
-      totalJuryStaked: '2.50',
-      votesValid: '1.80',
-      votesInvalid: '0.70',
-      votesInconclusive: '0.00',
-      exists: true,
-      decisionType: "Offside Detection"
-    },
-    {
-      playId: 102,
-      predictionPoolId: 2,
-      description: "Mbappe 68' - Touchline check before final cross.",
-      votingEndTime: Math.floor(Date.now() / 1000) + 3600,
-      status: 0, // Active
-      totalJuryStaked: '6.20',
-      votesValid: '1.20',
-      votesInvalid: '5.00',
-      votesInconclusive: '0.00',
-      exists: true,
-      decisionType: "Out of Bounds"
-    }
-  ],
+  predictionPools: [],
+  disputes: [],
 
   // ZK VM Pipeline State (SP1 Succinct)
   isZKProving: false,
@@ -117,55 +64,6 @@ export const useAppStore = create((set, get) => ({
   setPredictionPools: (pools) => set({ predictionPools: pools }),
   
   setDisputes: (disputes) => set({ disputes: disputes }),
-
-  placeLocalPrediction: (poolId, outcome, amount) => {
-    set((state) => {
-      const updatedPools = state.predictionPools.map(pool => {
-        if (pool.poolId === poolId) {
-          const amt = parseFloat(amount);
-          const o1 = outcome === 1 ? (parseFloat(pool.stakedOutcome1) + amt).toFixed(2) : pool.stakedOutcome1;
-          const o2 = outcome === 2 ? (parseFloat(pool.stakedOutcome2) + amt).toFixed(2) : pool.stakedOutcome2;
-          const total = (parseFloat(o1) + parseFloat(o2)).toFixed(2);
-          return {
-            ...pool,
-            stakedOutcome1: o1,
-            stakedOutcome2: o2,
-            totalStaked: total
-          };
-        }
-        return pool;
-      });
-      return { predictionPools: updatedPools };
-    });
-  },
-
-  castLocalJuryVote: (playId, choice, amount) => {
-    set((state) => {
-      const updatedDisputes = state.disputes.map(disp => {
-        if (disp.playId === playId) {
-          const amt = parseFloat(amount);
-          let v = parseFloat(disp.votesValid);
-          let inv = parseFloat(disp.votesInvalid);
-          let inc = parseFloat(disp.votesInconclusive);
-          
-          if (choice === 1) v += amt;
-          else if (choice === 2) inv += amt;
-          else if (choice === 3) inc += amt;
-
-          const total = (v + inv + inc).toFixed(2);
-          return {
-            ...disp,
-            votesValid: v.toFixed(2),
-            votesInvalid: inv.toFixed(2),
-            votesInconclusive: inc.toFixed(2),
-            totalJuryStaked: total
-          };
-        }
-        return disp;
-      });
-      return { disputes: updatedDisputes };
-    });
-  },
 
   // ZK-VM Proof Pipeline Actions
   startZKProofPipeline: (playId, isOffside, verifyTxFn, onSuccessCallback) => {

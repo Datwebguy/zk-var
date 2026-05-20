@@ -1,18 +1,29 @@
 import React, { useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useZKProof } from '../hooks/useZKProof';
+import { useWallet } from '../hooks/useWallet';
 import { Shield, Sparkles, Scale, Info, HelpCircle } from 'lucide-react';
 
 export const JuryVote = ({ activePlayId = 101 }) => {
   const { disputes, castJuryVote, claimJuryRewards, loading } = usePrediction();
   const { generateAndVerifyProof, isZKProving, txLoading } = useZKProof();
+  const { walletConnected, balance, connectWallet } = useWallet();
 
   const [voteChoice, setVoteChoice] = useState(1); // Default to Choice 1: Valid
   const [stakeAmount, setStakeAmount] = useState('0.25'); // Default stake of 0.25 OKB
 
   const dispute = disputes.find(d => d.playId === activePlayId) || disputes[0];
 
+  const userStake = parseFloat(stakeAmount) || 0.0;
+  const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
+  const isInsufficientBalance = walletConnected && (userStake > userBalance);
+
   const handleCastVote = async () => {
+    if (!walletConnected) {
+      await connectWallet('okx');
+      return;
+    }
+    if (isInsufficientBalance) return;
     await castJuryVote(activePlayId, voteChoice, stakeAmount);
   };
 
@@ -32,6 +43,23 @@ export const JuryVote = ({ activePlayId = 101 }) => {
       default: return 'ACTIVE';
     }
   };
+
+  if (!dispute) {
+    return (
+      <div className="glass-panel p-6 bg-[#121214]/40 flex flex-col items-center justify-center text-center min-h-[340px] relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#00F5FF]/5 to-transparent pointer-events-none" />
+        <Scale size={48} className="text-zinc-600 mb-4 animate-pulse" />
+        <h3 className="font-heading font-bold text-lg text-white mb-2">No Active Tribunal Cases</h3>
+        <p className="text-xs text-zinc-500 font-mono max-w-sm leading-normal mb-6">
+          Awaiting new play reviews or active dispute registry records from the X Layer smart contracts. Connect your wallet to deploy a custom match case.
+        </p>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-zinc-950/60 border border-zinc-800 text-glow-cyan text-[#00F5FF] text-2xs font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00F5FF] animate-ping" />
+          <span>LISTENING TO X LAYER TESTNET</span>
+        </div>
+      </div>
+    );
+  }
 
   const isClosed = dispute.status !== 0;
 
@@ -115,14 +143,30 @@ export const JuryVote = ({ activePlayId = 101 }) => {
                 <span>0.05 OKB</span>
                 <span>5.0 OKB</span>
               </div>
+
+              {walletConnected && (
+                <div className="flex justify-between text-3xs font-mono mt-1 text-zinc-500">
+                  <span>WALLET BALANCE:</span>
+                  <span className={isInsufficientBalance ? 'text-[#FF453A] font-bold' : 'text-[#A8FF35] font-bold'}>
+                    {balance} OKB {isInsufficientBalance && '(INSUFFICIENT)'}
+                  </span>
+                </div>
+              )}
             </div>
 
             <button
               onClick={handleCastVote}
-              disabled={loading}
-              className="neon-btn w-full py-3"
+              disabled={loading || (walletConnected && isInsufficientBalance)}
+              className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'SUBMITTING VOTE...' : 'CAST STAKED JURY VOTE'}
+              {loading 
+                ? 'SUBMITTING VOTE...' 
+                : !walletConnected 
+                  ? 'CONNECT TO VOTE' 
+                  : isInsufficientBalance 
+                    ? 'INSUFFICIENT OKB BALANCE' 
+                    : 'CAST STAKED JURY VOTE'
+              }
             </button>
           </div>
         )}

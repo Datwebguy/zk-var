@@ -241,7 +241,7 @@ export const VARPanel = ({ activePlayId = 101 }) => {
   }, [activePlayId]);
 
   return (
-    <div className="glass-panel p-6 scanline-overlay anim-hologram flex flex-col gap-6" style={{ width: '100%' }}>
+    <div className="glass-panel p-6 scanline-overlay flex flex-col gap-6" style={{ width: '100%' }}>
       <div className="flex flex-col xl:flex-row gap-6">
         
         {/* Procedural Spatial Rebuilder Canvas */}

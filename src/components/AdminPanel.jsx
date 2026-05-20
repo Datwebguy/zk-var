@@ -12,11 +12,10 @@ export const AdminPanel = () => {
   const [question, setQuestion] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('86400'); // Default 1 day
-  const [demoBypass, setDemoBypass] = useState(false);
 
   // Check if current user is owner
   const isOwner = walletConnected && contractOwner && userAddress.toLowerCase() === contractOwner.toLowerCase();
-  const canAccess = isOwner || demoBypass;
+  const canAccess = isOwner;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,47 +49,6 @@ export const AdminPanel = () => {
       return;
     }
 
-    if (demoBypass && !isOwner) {
-      // Simulate local creation
-      const newPool = {
-        poolId: poolNum,
-        question: question.trim(),
-        closingTime: Math.floor(Date.now() / 1000) + durationNum,
-        status: 0,
-        totalStaked: '0.00',
-        stakedOutcome1: '0.00',
-        stakedOutcome2: '0.00',
-        winningOutcome: 0,
-        disputeId: playNum,
-        match: "Custom Arena Match"
-      };
-
-      const newDispute = {
-        playId: playNum,
-        predictionPoolId: poolNum,
-        description: description.trim(),
-        votingEndTime: Math.floor(Date.now() / 1000) + durationNum,
-        status: 0,
-        totalJuryStaked: '0.00',
-        votesValid: '0.00',
-        votesInvalid: '0.00',
-        votesInconclusive: '0.00',
-        exists: true,
-        decisionType: playNum % 2 === 1 ? "Offside Detection" : "Out of Bounds"
-      };
-
-      setPredictionPools([...predictionPools, newPool]);
-      setDisputes([...disputes, newDispute]);
-      addNotification('success', `[DEMO MODE] Sandbox Pool & Dispute #${playNum} created locally!`);
-      
-      // Auto increment IDs for convenience
-      setPlayId((playNum + 1).toString());
-      setPoolId((poolNum + 1).toString());
-      setQuestion('');
-      setDescription('');
-      return;
-    }
-
     // Real on-chain creation
     const success = await createPoolAndDispute(playNum, poolNum, question.trim(), description.trim(), durationNum);
     if (success) {
@@ -103,34 +61,22 @@ export const AdminPanel = () => {
   };
 
   return (
-    <div className="glass-panel p-6 anim-hologram flex flex-col gap-6" style={{ width: '100%' }}>
+    <div className="glass-panel p-6 flex flex-col gap-6" style={{ width: '100%' }}>
       <div className="flex justify-between items-center border-b border-zinc-800/80 pb-4">
         <h3 className="text-glow-green text-[#A8FF35] text-sm font-heading font-bold uppercase tracking-wider flex items-center gap-2">
           <Wrench size={16} /> Admin Console // Play deployment
         </h3>
-        
-        {/* Sandbox toggle for non-owner wallets or demo mode */}
-        <div className="flex items-center gap-2.5">
-          <span className="text-3xs font-mono text-zinc-500 uppercase tracking-wide">Demo Sandbox Bypass:</span>
-          <button
-            onClick={() => setDemoBypass(!demoBypass)}
-            className={`w-9 h-5 rounded-full relative transition-all duration-300 ${demoBypass ? 'bg-[#A8FF35]' : 'bg-zinc-800'}`}
-          >
-            <span className={`w-3.5 h-3.5 rounded-full bg-black absolute top-[3px] transition-all duration-300 ${demoBypass ? 'right-[3px]' : 'left-[3px]'}`} />
-          </button>
-        </div>
       </div>
 
       {!canAccess ? (
         <div className="bg-[#1C120C] border border-[#FF9F0A]/20 p-4 rounded-lg flex items-start gap-3">
           <ShieldAlert className="text-[#FF9F0A] shrink-0" size={18} />
           <div className="font-mono text-xs flex flex-col gap-1.5">
-            <span className="text-[#FF9F0A] font-bold">ACCESS RESTRICTED</span>
+            <span className="text-[#FF9F0A] font-bold">ACCESS RESTRICTED // OWNER ONLY</span>
             <p className="text-zinc-400">
-              Only the contract owner address is permitted to write new games directly to the X Layer L2 contracts. 
-            </p>
-            <p className="text-zinc-500 text-3xs">
-              Toggle the "Demo Sandbox Bypass" above to test the deployment interface locally in sandbox mode!
+              {!walletConnected 
+                ? "Please connect your Web3 wallet. Only the contract owner address is permitted to deploy new prediction pools."
+                : `Only the contract owner address is permitted to deploy new prediction pools. Connected address: ${userAddress}`}
             </p>
           </div>
         </div>
@@ -141,7 +87,7 @@ export const AdminPanel = () => {
           <div className="bg-[#0c1c13] border border-[#A8FF35]/10 p-3 rounded-lg flex items-center gap-2">
             <CheckCircle2 className="text-[#A8FF35]" size={14} />
             <span className="text-zinc-400 text-3xs">
-              {isOwner ? "LOGGED IN AS CONTRACT OWNER. Actions deploy to X Layer Testnet." : "DEMO SANDBOX ACTIVE. Actions will simulate locally."}
+              LOGGED IN AS CONTRACT OWNER. Actions deploy to X Layer Testnet.
             </span>
           </div>
 
@@ -215,10 +161,10 @@ export const AdminPanel = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#A8FF35] text-black font-bold py-2.5 px-4 rounded hover:bg-[#baff57] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_rgba(168,255,53,0.3)]"
+            className="neon-btn w-full py-2.5 flex items-center justify-center gap-2"
           >
             <PlusCircle size={16} />
-            {loading ? "DEPLOYING TO BLOCKCHAIN..." : isOwner ? "DEPLOY NEW ARENA PLAY (ON-CHAIN)" : "CREATE DEMO ARENA PLAY (SANDBOX)"}
+            {loading ? "DEPLOYING TO BLOCKCHAIN..." : "DEPLOY NEW ARENA PLAY (ON-CHAIN)"}
           </button>
         </form>
       )}

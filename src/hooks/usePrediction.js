@@ -18,12 +18,24 @@ let cache = {
 };
 const STALE_TIME = 15000; // 15 seconds in milliseconds
 
+const RPC_URLS = [
+  "https://testrpc.xlayer.tech/terigon",
+  "https://xlayertestrpc.okx.com/terigon"
+];
+let activeRpcIndex = 0;
+
+const rotateRpcUrl = () => {
+  activeRpcIndex = (activeRpcIndex + 1) % RPC_URLS.length;
+  console.warn(`[ZK-VAR] Rotating fallback RPC URL to index ${activeRpcIndex}: ${RPC_URLS[activeRpcIndex]}`);
+};
+
 export const usePrediction = () => {
   const {
     walletConnected,
+    userAddress,
+    walletType,
+    setWalletState,
     addNotification,
-    placeLocalPrediction,
-    castLocalJuryVote,
     predictionPools,
     disputes,
     setPredictionPools,
@@ -32,6 +44,21 @@ export const usePrediction = () => {
 
   const [loading, setLoading] = useState(false);
   const [contractOwner, setContractOwner] = useState(null);
+
+  // Helper to query and refresh on-chain wallet balance dynamically
+  const refreshBalance = useCallback(async () => {
+    if (!walletConnected || !userAddress || typeof window === 'undefined') return;
+    const provider = walletType === 'okx' ? window.okxwallet : window.ethereum;
+    if (!provider) return;
+    try {
+      const browserProvider = new ethers.BrowserProvider(provider);
+      const rawBalance = await browserProvider.getBalance(userAddress);
+      const formattedBalance = parseFloat(ethers.formatEther(rawBalance)).toFixed(4);
+      setWalletState({ balance: formattedBalance });
+    } catch (e) {
+      console.error("Failed to refresh balance on-chain:", e);
+    }
+  }, [walletConnected, walletType, userAddress, setWalletState]);
 
   // Helper to instantiate active contract instance
   const getContract = useCallback(async (contractType, needsSigner = false) => {
@@ -43,7 +70,7 @@ export const usePrediction = () => {
     // Fallback to public RPC if no wallet connected or no provider (for read-only queries)
     if (!provider) {
       if (needsSigner) return null;
-      provider = new ethers.JsonRpcProvider("https://testrpc.xlayer.tech/terigon");
+      provider = new ethers.JsonRpcProvider(RPC_URLS[activeRpcIndex]);
     }
 
     const address = CONTRACT_ADDRESSES[contractType];
@@ -96,10 +123,6 @@ export const usePrediction = () => {
 
       // Fetch details for pool IDs 1 to 10 concurrently
       const poolIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-      const fallbackQuestions = {
-        1: "Will the VAR check rule Messi's 42nd minute goal OFFSIDE?",
-        2: "Was the ball completely out of bounds before Mbappe's assist?"
-      };
       
       const fetchPromises = poolIds.map(async (id) => {
         try {
@@ -109,21 +132,6 @@ export const usePrediction = () => {
 
           // If the pool closingTime is 0, it means it doesn't exist on contract
           if (closingTime === 0) {
-            // Keep fallback for IDs 1 & 2 even if not on-chain
-            if (id <= 2) {
-              return {
-                poolId: id,
-                question: fallbackQuestions[id],
-                closingTime: Math.floor(Date.now() / 1000) + (id === 1 ? 1200 : 3600),
-                status: 0,
-                winningOutcome: 0,
-                totalStaked: "0.00",
-                stakedOutcome1: "0.00",
-                stakedOutcome2: "0.00",
-                disputeId: 100 + id,
-                match: "Argentina vs France"
-              };
-            }
             return null;
           }
 
@@ -141,20 +149,6 @@ export const usePrediction = () => {
           };
         } catch (e) {
           console.warn(`Pool ${id} fetch error:`, e);
-          if (id <= 2) {
-            return {
-              poolId: id,
-              question: fallbackQuestions[id],
-              closingTime: Math.floor(Date.now() / 1000) + (id === 1 ? 1200 : 3600),
-              status: 0,
-              winningOutcome: 0,
-              totalStaked: "0.00",
-              stakedOutcome1: "0.00",
-              stakedOutcome2: "0.00",
-              disputeId: 100 + id,
-              match: "Argentina vs France"
-            };
-          }
           return null;
         }
       });
@@ -169,6 +163,7 @@ export const usePrediction = () => {
       }
     } catch (error) {
       console.error("Failed to fetch prediction pools from contract:", error);
+      rotateRpcUrl();
     } finally {
       setLoading(false);
     }
@@ -192,10 +187,6 @@ export const usePrediction = () => {
 
       // Fetch details for dispute IDs 101 to 110 concurrently
       const disputeIds = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110];
-      const fallbackDescriptions = {
-        101: "Messi 42' - Possible offside detection on run-up.",
-        102: "Mbappe 68' - Touchline check before final cross."
-      };
       
       const fetchPromises = disputeIds.map(async (id) => {
         try {
@@ -206,23 +197,6 @@ export const usePrediction = () => {
 
           // If votingEndTime is 0, it means it doesn't exist on contract
           if (votingEndTime === 0) {
-            if (id <= 102) {
-              return {
-                playId: id,
-                predictionPoolId: id - 100,
-                description: fallbackDescriptions[id],
-                votingEndTime: Math.floor(Date.now() / 1000) + (id === 101 ? 1200 : 3600),
-                status: 0,
-                totalJuryStaked: "0.00",
-                votesValid: "0.00",
-                votesInvalid: "0.00",
-                votesInconclusive: "0.00",
-                exists: true,
-                verdict: 0,
-                resolutionTime: 0,
-                decisionType: id === 101 ? "Offside Detection" : "Out of Bounds"
-              };
-            }
             return null;
           }
 
@@ -243,23 +217,6 @@ export const usePrediction = () => {
           };
         } catch (e) {
           console.warn(`Dispute ${id} fetch error:`, e);
-          if (id <= 102) {
-            return {
-              playId: id,
-              predictionPoolId: id - 100,
-              description: fallbackDescriptions[id],
-              votingEndTime: Math.floor(Date.now() / 1000) + (id === 101 ? 1200 : 3600),
-              status: 0,
-              totalJuryStaked: "0.00",
-              votesValid: "0.00",
-              votesInvalid: "0.00",
-              votesInconclusive: "0.00",
-              exists: true,
-              verdict: 0,
-              resolutionTime: 0,
-              decisionType: id === 101 ? "Offside Detection" : "Out of Bounds"
-            };
-          }
           return null;
         }
       });
@@ -274,6 +231,7 @@ export const usePrediction = () => {
       }
     } catch (error) {
       console.error("Failed to fetch disputes from contract:", error);
+      rotateRpcUrl();
     }
   }, [getContract, setDisputes]);
 
@@ -300,6 +258,30 @@ export const usePrediction = () => {
       }
 
       const txOptions = value ? { value } : {};
+      
+      // Override fee parameters with legacy gasPrice to avoid wallet EIP-1559 calculation errors on X Layer
+      const browserProvider = getWeb3Provider();
+      if (browserProvider) {
+        try {
+          const feeData = await browserProvider.getFeeData();
+          if (feeData.gasPrice) {
+            txOptions.gasPrice = feeData.gasPrice;
+            console.log(`[TRANSACTION] Applying legacy gasPrice override to bypass EIP-1559: ${txOptions.gasPrice.toString()} wei`);
+          }
+        } catch (feeError) {
+          console.warn(`[TRANSACTION] Failed to fetch fee data for legacy gasPrice override:`, feeError);
+        }
+      }
+
+      try {
+        // Estimate gas limit with a 30% buffer to avoid transaction dry-run failures on X Layer Testnet
+        const estimatedGas = await contract[method].estimateGas(...args, txOptions);
+        txOptions.gasLimit = (estimatedGas * 130n) / 100n;
+        console.log(`Estimated gas for ${contractType}.${method}: ${estimatedGas.toString()}, applied gasLimit with 30% buffer: ${txOptions.gasLimit.toString()}`);
+      } catch (estError) {
+        console.warn(`Failed to estimate gas for ${contractType}.${method}, letting wallet handle estimation:`, estError);
+      }
+
       const tx = await contract[method](...args, txOptions);
       addNotification('pending', `Transaction submitted. Awaiting confirmation...`, tx.hash);
 
@@ -309,52 +291,240 @@ export const usePrediction = () => {
       if (onSuccess) {
         await onSuccess();
       }
+      await refreshBalance(); // Automatically refresh user's on-chain wallet balance
       return true;
     } catch (error) {
       console.error(`Transaction execution failed for ${contractType}.${method}:`, error);
       if (onFailure) {
         onFailure();
       }
-      addNotification('error', `Transaction failed or rejected. Local state simulated.`);
+      addNotification('error', `Transaction failed or rejected on-chain.`);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [getContract, addNotification]);
+  }, [getContract, addNotification, refreshBalance]);
 
   /**
    * @notice Place prediction on-chain on X Layer Testnet, with safe local state failover
    */
   const placePrediction = useCallback(async (poolId, outcome, amount) => {
     if (!walletConnected) {
-      placeLocalPrediction(poolId, outcome, amount);
-      addNotification('success', `[DEMO MODE] Prediction placed locally! Stake: ${amount} OKB`);
+      addNotification('error', 'Please connect your Web3 wallet to place a prediction on-chain.');
       return;
     }
 
     const txValue = ethers.parseEther(amount.toString());
-    
-    await handleContractTx({
-      contractType: 'PredictionPool',
-      method: 'placePrediction',
-      args: [poolId, outcome],
-      value: txValue,
-      pendingMsg: `Preparing transaction: predict pool ${poolId}...`,
-      successMsg: `Prediction transaction confirmed!`,
-      onSuccess: () => fetchPredictionPools(true),
-      onFailure: () => {
-        placeLocalPrediction(poolId, outcome, amount);
+    setLoading(true);
+    addNotification('pending', `Performing pre-flight checks and simulating transaction on-chain...`);
+
+    try {
+      const contract = await getContract('PredictionPool', true);
+      if (!contract) {
+        throw new Error("PredictionPool contract instance not initialized.");
       }
-    });
-  }, [walletConnected, placeLocalPrediction, fetchPredictionPools, addNotification, handleContractTx]);
+
+      const browserProvider = getWeb3Provider();
+      if (!browserProvider) {
+        throw new Error("Web3 provider missing.");
+      }
+
+      // --- 4. PRE-FLIGHT CHECK: Validate pool is currently open and accepting predictions ---
+      console.log(`[PRE-FLIGHT] Querying Pool ${poolId} details...`);
+      const pool = await contract.pools(poolId);
+      
+      if (!pool.exists) {
+        const errorMsg = `Pre-flight failed: Pool ${poolId} does not exist on-chain.`;
+        console.error(errorMsg);
+        addNotification('error', errorMsg);
+        throw new Error(errorMsg);
+      }
+      
+      // PoolStatus enum: Open = 0, Closed = 1, Resolved = 2, Cancelled = 3
+      if (Number(pool.status) !== 0) {
+        const errorMsg = `Pre-flight failed: Pool ${poolId} is not Open (Current status: ${pool.status.toString()}).`;
+        console.error(errorMsg);
+        addNotification('error', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      if (nowInSeconds >= Number(pool.closingTime)) {
+        const errorMsg = `Pre-flight failed: Pool ${poolId} is closed for predictions (closing time passed).`;
+        console.error(errorMsg);
+        addNotification('error', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // --- 3. PRE-FLIGHT CHECK: Read contract's required bet amount and validate OKB value ---
+      // The contract requires msg.value > 0. We validate this and ensure it matches the positive OKB value.
+      if (txValue <= 0n) {
+        const errorMsg = `Pre-flight failed: Bet amount must be greater than 0 OKB (Sending: ${amount} OKB).`;
+        console.error(errorMsg);
+        addNotification('error', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Check user's native OKB balance to verify they have enough funds (bet value + basic gas overhead)
+      const signer = await browserProvider.getSigner();
+      const userAddress = await signer.getAddress();
+      const balance = await browserProvider.getBalance(userAddress);
+      if (balance < txValue) {
+        const errorMsg = `Insufficient OKB balance. Wallet has: ${ethers.formatEther(balance)} OKB, Need: ${amount} OKB.`;
+        console.error(`[PRE-FLIGHT] ${errorMsg}`);
+        addNotification('error', `Pre-flight failed: ${errorMsg}`);
+        throw new Error(errorMsg);
+      }
+
+      // Additional Check: Verify if user already placed a bet and ensure they don't change outcomes
+      const userBet = await contract.bets(poolId, userAddress);
+      if (userBet.amount > 0n && Number(userBet.outcome) !== Number(outcome)) {
+        const errorMsg = `Pre-flight failed: Cannot change prediction outcome side (already bet on Outcome ${userBet.outcome.toString()}).`;
+        console.error(errorMsg);
+        addNotification('error', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      console.log("[PRE-FLIGHT] Pre-flight checks passed successfully.");
+
+      // --- 1. RUN ETH_CALL SIMULATION: Get actual revert reason before sending, and log it clearly ---
+      console.log(`[SIMULATION] Simulating placePrediction(${poolId}, ${outcome}) via eth_call...`);
+      const txData = {
+        from: userAddress,
+        to: await contract.getAddress(),
+        data: contract.interface.encodeFunctionData("placePrediction", [poolId, outcome]),
+        value: txValue
+      };
+
+      try {
+        await browserProvider.call(txData);
+        console.log("[SIMULATION] eth_call simulation succeeded! Transaction is safe to broadcast.");
+      } catch (simError) {
+        console.error("[SIMULATION] eth_call simulation failed! Revert details:", simError);
+        try {
+          console.error("[SIMULATION RAW ERROR]", JSON.stringify(simError, (key, value) => typeof value === 'bigint' ? value.toString() : value, 2));
+        } catch (e) {
+          console.error("[SIMULATION RAW ERROR]", simError);
+        }
+        
+        // Try decoding simulation error using ethers v6
+        let revertReason = "Transaction will revert on-chain";
+        let errorData = null;
+        if (simError.data) {
+          errorData = simError.data;
+        } else if (simError.error && simError.error.data) {
+          errorData = simError.error.data;
+        }
+        
+        if (errorData && typeof errorData === 'string') {
+          try {
+            if (errorData.startsWith('0x08c379a0')) {
+              const decoded = ethers.AbiCoder.defaultAbiCoder().decode(['string'], '0x' + errorData.substring(10));
+              revertReason = decoded[0];
+            } else {
+              const parsedError = contract.interface.parseError(errorData);
+              if (parsedError) {
+                revertReason = `${parsedError.name}(${parsedError.args.join(', ')})`;
+              }
+            }
+          } catch (decodingError) {
+            console.warn("Failed to decode simulation error data:", decodingError);
+          }
+        } else if (simError.reason) {
+          revertReason = simError.reason;
+        } else if (simError.message) {
+          revertReason = simError.message;
+        }
+        
+        const finalSimError = `Simulation failed on-chain: ${revertReason}`;
+        addNotification('error', finalSimError);
+        throw new Error(finalSimError);
+      }
+
+      // --- 2 & 5. BROADCAST & DECODE CUSTOM ERRORS: Surface and throw the real revert message ---
+      console.log("[TRANSACTION] Estimating gas and preparing broadcast options...");
+      
+      const txOptions = { value: txValue };
+      
+      // Override fee parameters with legacy gasPrice to avoid wallet EIP-1559 calculation errors on X Layer
+      try {
+        const feeData = await browserProvider.getFeeData();
+        if (feeData.gasPrice) {
+          txOptions.gasPrice = feeData.gasPrice;
+          console.log(`[TRANSACTION] Applying legacy gasPrice override to bypass EIP-1559: ${txOptions.gasPrice.toString()} wei`);
+        }
+      } catch (feeError) {
+        console.warn("[TRANSACTION] Failed to fetch fee data for legacy gasPrice override:", feeError);
+      }
+
+      let gasLimit;
+      try {
+        const estimatedGas = await contract.placePrediction.estimateGas(poolId, outcome, txOptions);
+        gasLimit = (estimatedGas * 130n) / 100n; // Apply 30% safety buffer for L2 execution stability
+        console.log(`[TRANSACTION] Estimated Gas: ${estimatedGas.toString()}. Applying buffered gasLimit: ${gasLimit.toString()}`);
+      } catch (estError) {
+        console.warn("[TRANSACTION] Failed to estimate gas, letting wallet handle limit:", estError);
+      }
+
+      if (gasLimit) txOptions.gasLimit = gasLimit;
+
+      addNotification('pending', `Submitting prediction to wallet: ${amount} OKB...`);
+      const tx = await contract.placePrediction(poolId, outcome, txOptions);
+      addNotification('pending', `Transaction submitted. Awaiting block confirmation...`, tx.hash);
+
+      await tx.wait();
+      addNotification('success', `Prediction transaction confirmed!`, tx.hash);
+      
+      await fetchPredictionPools(true);
+      await refreshBalance();
+    } catch (error) {
+      // Decode the error using ethers v6
+      let decodedMessage = error.message || "Transaction failed";
+      
+      let errorData = null;
+      if (error.data) {
+        errorData = error.data;
+      } else if (error.error && error.error.data) {
+        errorData = error.error.data;
+      } else if (error.receipt && error.receipt.data) {
+        errorData = error.receipt.data;
+      }
+      
+      if (errorData && typeof errorData === 'string') {
+        try {
+          if (errorData.startsWith('0x08c379a0')) {
+            const decoded = ethers.AbiCoder.defaultAbiCoder().decode(['string'], '0x' + errorData.substring(10));
+            decodedMessage = decoded[0];
+          } else {
+            const errorContract = await getContract('PredictionPool', false);
+            const parsedError = errorContract.interface.parseError(errorData);
+            if (parsedError) {
+              decodedMessage = `${parsedError.name}(${parsedError.args.join(', ')})`;
+            }
+          }
+        } catch (decodingError) {
+          console.warn("Failed to decode transaction execution error:", decodingError);
+        }
+      } else if (error.reason) {
+        decodedMessage = error.reason;
+      } else if (error.message && error.message.includes("user rejected")) {
+        decodedMessage = "Transaction rejected by user in Web3 wallet.";
+      }
+
+      console.error(`[TRANSACTION FAILED] ${decodedMessage}`, error);
+      addNotification('error', `Transaction execution failed: ${decodedMessage}`);
+      throw new Error(decodedMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [walletConnected, getContract, fetchPredictionPools, refreshBalance, addNotification]);
 
   /**
-   * @notice Cast fan jury vote on-chain on X Layer Testnet, with safe local state failover
+   * @notice Cast fan jury vote on-chain on X Layer Testnet
    */
   const castJuryVote = useCallback(async (playId, choice, amount) => {
     if (!walletConnected) {
-      castLocalJuryVote(playId, choice, amount);
-      addNotification('success', `[DEMO MODE] Jury vote cast locally! Stake: ${amount} OKB`);
+      addNotification('error', 'Please connect your Web3 wallet to cast a jury vote on-chain.');
       return;
     }
 
@@ -367,19 +537,16 @@ export const usePrediction = () => {
       value: txValue,
       pendingMsg: `Preparing transaction: cast jury vote...`,
       successMsg: `Jury vote transaction confirmed!`,
-      onSuccess: () => fetchDisputes(true),
-      onFailure: () => {
-        castLocalJuryVote(playId, choice, amount);
-      }
+      onSuccess: () => fetchDisputes(true)
     });
-  }, [walletConnected, castLocalJuryVote, fetchDisputes, addNotification, handleContractTx]);
+  }, [walletConnected, fetchDisputes, addNotification, handleContractTx]);
 
   /**
    * @notice Claim payout for a correctly predicted market
    */
   const claimPayout = useCallback(async (poolId) => {
     if (!walletConnected) {
-      addNotification('success', `[DEMO MODE] Mock payout claimed successfully!`);
+      addNotification('error', 'Please connect your Web3 wallet to claim payouts on-chain.');
       return;
     }
 
@@ -391,14 +558,14 @@ export const usePrediction = () => {
       successMsg: `Payout claimed successfully!`,
       onSuccess: () => fetchPredictionPools(true)
     });
-  }, [walletConnected, fetchPredictionPools, handleContractTx]);
+  }, [walletConnected, fetchPredictionPools, handleContractTx, addNotification]);
 
   /**
    * @notice Claim jury reward share from losing voters
    */
   const claimJuryRewards = useCallback(async (playId) => {
     if (!walletConnected) {
-      addNotification('success', `[DEMO MODE] Mock jury reward claimed successfully!`);
+      addNotification('error', 'Please connect your Web3 wallet to claim jury rewards on-chain.');
       return;
     }
 
@@ -410,7 +577,7 @@ export const usePrediction = () => {
       successMsg: `Jury rewards claimed successfully!`,
       onSuccess: () => fetchDisputes(true)
     });
-  }, [walletConnected, fetchDisputes, handleContractTx]);
+  }, [walletConnected, fetchDisputes, handleContractTx, addNotification]);
 
   /**
    * @notice Admin only action to deploy a new prediction pool and matching dispute on-chain
