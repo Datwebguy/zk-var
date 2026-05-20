@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ethers } from 'ethers';
 import {
@@ -31,6 +31,24 @@ export const usePrediction = () => {
   } = useAppStore();
 
   const [loading, setLoading] = useState(false);
+  const [contractOwner, setContractOwner] = useState(null);
+
+  // Query contract owner address dynamically
+  const fetchContractOwner = useCallback(async () => {
+    try {
+      const contract = await getContract('PredictionPool');
+      if (contract) {
+        const owner = await contract.owner();
+        setContractOwner(owner);
+      }
+    } catch (error) {
+      console.error("Failed to fetch contract owner address:", error);
+    }
+  }, [getContract]);
+
+  useEffect(() => {
+    fetchContractOwner();
+  }, [fetchContractOwner, walletConnected]);
 
   // Helper to instantiate active contract instance
   const getContract = useCallback(async (contractType, needsSigner = false) => {
@@ -76,8 +94,8 @@ export const usePrediction = () => {
         return; // Fallback to Zustand default mock data
       }
 
-      // Fetch details for pool 1 and 2 concurrently via Promise.all
-      const poolIds = [1, 2];
+      // Fetch details for pool IDs 1 to 10 concurrently
+      const poolIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       const fallbackQuestions = {
         1: "Will the VAR check rule Messi's 42nd minute goal OFFSIDE?",
         2: "Was the ball completely out of bounds before Mbappe's assist?"
@@ -87,20 +105,56 @@ export const usePrediction = () => {
         try {
           const details = await contract.getPoolDetails(id);
           const questionText = details[0];
+          const closingTime = Number(details[1]);
+
+          // If the pool closingTime is 0, it means it doesn't exist on contract
+          if (closingTime === 0) {
+            // Keep fallback for IDs 1 & 2 even if not on-chain
+            if (id <= 2) {
+              return {
+                poolId: id,
+                question: fallbackQuestions[id],
+                closingTime: Math.floor(Date.now() / 1000) + (id === 1 ? 1200 : 3600),
+                status: 0,
+                winningOutcome: 0,
+                totalStaked: "0.00",
+                stakedOutcome1: "0.00",
+                stakedOutcome2: "0.00",
+                disputeId: 100 + id,
+                match: "Argentina vs France"
+              };
+            }
+            return null;
+          }
+
           return {
             poolId: id,
-            question: questionText && questionText.trim() !== "" ? questionText : fallbackQuestions[id],
-            closingTime: Number(details[1]) || (Math.floor(Date.now() / 1000) + (id === 1 ? 1200 : 3600)),
+            question: questionText && questionText.trim() !== "" ? questionText : `Custom Arena Pool #${id}`,
+            closingTime,
             status: Number(details[2]),
             winningOutcome: Number(details[3]),
             totalStaked: formatEtherVal(details[4]),
             stakedOutcome1: formatEtherVal(details[5]),
             stakedOutcome2: formatEtherVal(details[6]),
             disputeId: 100 + id,
-            match: "Argentina vs France"
+            match: id <= 2 ? "Argentina vs France" : "Custom Arena Match"
           };
         } catch (e) {
-          console.warn(`Pool ${id} not found on contract. Initializing with local fallback.`);
+          console.warn(`Pool ${id} fetch error:`, e);
+          if (id <= 2) {
+            return {
+              poolId: id,
+              question: fallbackQuestions[id],
+              closingTime: Math.floor(Date.now() / 1000) + (id === 1 ? 1200 : 3600),
+              status: 0,
+              winningOutcome: 0,
+              totalStaked: "0.00",
+              stakedOutcome1: "0.00",
+              stakedOutcome2: "0.00",
+              disputeId: 100 + id,
+              match: "Argentina vs France"
+            };
+          }
           return null;
         }
       });
@@ -136,8 +190,8 @@ export const usePrediction = () => {
       const contract = await getContract('DisputeRegistry');
       if (!contract) return; // Fallback to Zustand default mock data
 
-      // Fetch details for dispute 101 and 102 concurrently via Promise.all
-      const disputeIds = [101, 102];
+      // Fetch details for dispute IDs 101 to 110 concurrently
+      const disputeIds = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110];
       const fallbackDescriptions = {
         101: "Messi 42' - Possible offside detection on run-up.",
         102: "Mbappe 68' - Touchline check before final cross."
@@ -146,22 +200,66 @@ export const usePrediction = () => {
       const fetchPromises = disputeIds.map(async (id) => {
         try {
           const details = await contract.getDisputeDetails(id);
+          const poolId = Number(details[0]);
           const descText = details[1];
+          const votingEndTime = Number(details[2]);
+
+          // If votingEndTime is 0, it means it doesn't exist on contract
+          if (votingEndTime === 0) {
+            if (id <= 102) {
+              return {
+                playId: id,
+                predictionPoolId: id - 100,
+                description: fallbackDescriptions[id],
+                votingEndTime: Math.floor(Date.now() / 1000) + (id === 101 ? 1200 : 3600),
+                status: 0,
+                totalJuryStaked: "0.00",
+                votesValid: "0.00",
+                votesInvalid: "0.00",
+                votesInconclusive: "0.00",
+                exists: true,
+                verdict: 0,
+                resolutionTime: 0,
+                decisionType: id === 101 ? "Offside Detection" : "Out of Bounds"
+              };
+            }
+            return null;
+          }
+
           return {
             playId: id,
-            predictionPoolId: Number(details[0]) || (id - 100),
-            description: descText && descText.trim() !== "" ? descText : fallbackDescriptions[id],
-            votingEndTime: Number(details[2]) || (Math.floor(Date.now() / 1000) + (id === 101 ? 1200 : 3600)),
+            predictionPoolId: poolId,
+            description: descText && descText.trim() !== "" ? descText : `Custom Play Review #${id}`,
+            votingEndTime,
             status: Number(details[3]),
             totalJuryStaked: formatEtherVal(details[4]),
             votesValid: formatEtherVal(details[5]),
             votesInvalid: formatEtherVal(details[6]),
             votesInconclusive: formatEtherVal(details[7]),
             exists: true,
-            decisionType: id === 101 ? "Offside Detection" : "Out of Bounds"
+            verdict: Number(details[8]),
+            resolutionTime: Number(details[9]),
+            decisionType: id % 2 === 1 ? "Offside Detection" : "Out of Bounds"
           };
         } catch (e) {
-          console.warn(`Dispute ${id} not found on contract. Initializing with local fallback.`);
+          console.warn(`Dispute ${id} fetch error:`, e);
+          if (id <= 102) {
+            return {
+              playId: id,
+              predictionPoolId: id - 100,
+              description: fallbackDescriptions[id],
+              votingEndTime: Math.floor(Date.now() / 1000) + (id === 101 ? 1200 : 3600),
+              status: 0,
+              totalJuryStaked: "0.00",
+              votesValid: "0.00",
+              votesInvalid: "0.00",
+              votesInconclusive: "0.00",
+              exists: true,
+              verdict: 0,
+              resolutionTime: 0,
+              decisionType: id === 101 ? "Offside Detection" : "Out of Bounds"
+            };
+          }
           return null;
         }
       });
@@ -314,15 +412,51 @@ export const usePrediction = () => {
     });
   }, [walletConnected, fetchDisputes, handleContractTx]);
 
+  /**
+   * @notice Admin only action to deploy a new prediction pool and matching dispute on-chain
+   */
+  const createPoolAndDispute = useCallback(async (playId, poolId, question, description, durationSeconds) => {
+    if (!walletConnected) {
+      addNotification('error', "Wallet must be connected to run admin commands.");
+      return false;
+    }
+
+    // Step 1: Create the prediction pool on PredictionPool contract
+    const poolSuccess = await handleContractTx({
+      contractType: 'PredictionPool',
+      method: 'createPool',
+      args: [poolId, question, durationSeconds],
+      pendingMsg: `Creating Prediction Pool #${poolId} on-chain...`,
+      successMsg: `Prediction Pool #${poolId} created!`,
+      onSuccess: () => fetchPredictionPools(true)
+    });
+
+    if (!poolSuccess) return false;
+
+    // Step 2: Create the dispute on DisputeRegistry contract
+    const disputeSuccess = await handleContractTx({
+      contractType: 'DisputeRegistry',
+      method: 'createDispute',
+      args: [playId, poolId, description, durationSeconds],
+      pendingMsg: `Creating Dispute #${playId} on-chain...`,
+      successMsg: `Dispute #${playId} created successfully!`,
+      onSuccess: () => fetchDisputes(true)
+    });
+
+    return disputeSuccess;
+  }, [walletConnected, handleContractTx, fetchPredictionPools, fetchDisputes, addNotification]);
+
   return {
     loading,
     predictionPools,
     disputes,
+    contractOwner,
     fetchPredictionPools,
     fetchDisputes,
     placePrediction,
     castJuryVote,
     claimPayout,
-    claimJuryRewards
+    claimJuryRewards,
+    createPoolAndDispute
   };
 };

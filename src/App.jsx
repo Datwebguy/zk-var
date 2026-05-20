@@ -5,8 +5,10 @@ import { JuryVote } from './components/JuryVote';
 import { PredictionBoard } from './components/PredictionBoard';
 import { WalletConnect } from './components/WalletConnect';
 import { ZKProver } from './components/ZKProver';
+import { AdminPanel } from './components/AdminPanel';
 import { usePrediction } from './hooks/usePrediction';
-import { ShieldAlert, Trophy, ShieldCheck, Activity, Cpu } from 'lucide-react';
+import { useAppStore } from './store/useAppStore';
+import { ShieldAlert, Trophy, ShieldCheck, Activity, Cpu, Wrench } from 'lucide-react';
 
 // Import design system sheets
 import './styles/globals.css';
@@ -15,7 +17,9 @@ import './styles/components.css';
 
 function App() {
   const [activePlayId, setActivePlayId] = useState(101); // Default to Messi offside play
-  const { fetchPredictionPools, fetchDisputes } = usePrediction();
+  const { fetchPredictionPools, fetchDisputes, contractOwner } = usePrediction();
+  const { walletConnected, userAddress } = useAppStore();
+  const [showAdminConsole, setShowAdminConsole] = useState(false);
 
   // Load contract values on startup
   useEffect(() => {
@@ -70,16 +74,32 @@ function App() {
             <Trophy size={10} className="text-[#A8FF35]" /> WORLD CUP FINALS: ARGENTINA 2 - 2 FRANCE (82')
           </span>
         </div>
-        <div className="live-status-ticker-right">
+        <div className="live-status-ticker-right flex items-center gap-3">
           <span className="text-glow-green text-[#A8FF35]">X LAYER L2 GAS: 0.1 Gwei</span>
           <span className="text-zinc-700">|</span>
-          <span>ORACLE DISPATCH: SECURE</span>
+          <button
+            onClick={() => setShowAdminConsole(!showAdminConsole)}
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-3xs font-mono tracking-wider transition-all uppercase ${
+              showAdminConsole 
+                ? 'bg-[#A8FF35]/10 border-[#A8FF35] text-[#A8FF35] hover:bg-[#A8FF35]/25 hover:shadow-[0_0_15px_rgba(168,255,53,0.15)] font-bold' 
+                : 'bg-zinc-950/40 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-white'
+            }`}
+          >
+            <Wrench size={10} className={showAdminConsole ? 'animate-spin' : ''} />
+            Admin Console {showAdminConsole ? 'ON' : 'OFF'}
+          </button>
         </div>
       </div>
 
       {/* 4. Restructured Main Grid Content */}
       <main className="main-grid">
         
+        {showAdminConsole && (
+          <div className="full-width-bottom" style={{ marginBottom: '8px' }}>
+            <AdminPanel />
+          </div>
+        )}
+
         {/* LEFT COLUMN — 55% width */}
         <div className="left-column">
           
