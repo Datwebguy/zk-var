@@ -1,0 +1,637 @@
+/* HUD Elements */
+.hud-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-value {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Customized range sliders for stakes */
+.neon-range-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  outline: none;
+  margin: 16px 0;
+}
+
+.neon-range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary);
+  cursor: pointer;
+  transition: transform 0.1s ease-in-out;
+}
+
+.neon-range-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+}
+
+.neon-range-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  box-shadow: 0 0 10px var(--accent-primary);
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s ease-in-out;
+}
+
+.neon-range-slider::-moz-range-thumb:hover {
+  transform: scale(1.3);
+}
+
+/* 7. Unified Button Styling Specs */
+.jury-vote-btn, .btn-inactive-state {
+  background: transparent;
+  border: 1px solid rgba(168, 255, 53, 0.3);
+  color: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  text-transform: uppercase;
+}
+
+.jury-vote-btn:hover:not(:disabled), .btn-inactive-state:hover:not(:disabled) {
+  border-color: #A8FF35;
+  color: #A8FF35;
+  box-shadow: 0 0 12px rgba(168, 255, 53, 0.3);
+  background: transparent;
+}
+
+/* Active / Selected Button state */
+.jury-vote-btn.selected-valid,
+.jury-vote-btn.selected-invalid,
+.jury-vote-btn.selected-inconclusive,
+.jury-vote-btn.active,
+.btn-active-state {
+  background: #A8FF35 !important;
+  color: #0A0A0B !important;
+  font-weight: 700;
+  border: 1px solid #A8FF35 !important;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 12px rgba(168, 255, 53, 0.3);
+}
+
+.jury-vote-btn.selected-valid span,
+.jury-vote-btn.selected-invalid span,
+.jury-vote-btn.selected-inconclusive span,
+.jury-vote-btn.active span,
+.btn-active-state span {
+  color: #0A0A0B !important;
+}
+
+/* Connect Wallet specific buttons */
+.btn-connect {
+  background: transparent !important;
+  border: 1px solid #A8FF35 !important;
+  color: #A8FF35 !important;
+  box-shadow: 0 0 15px rgba(168, 255, 53, 0.25) !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-connect:hover {
+  background: #A8FF35 !important;
+  color: #0A0A0B !important;
+  box-shadow: 0 0 25px rgba(168, 255, 53, 0.5) !important;
+}
+
+/* General Neon Action Button styling */
+.neon-btn {
+  background: #A8FF35;
+  color: #0A0A0B;
+  border: 1px solid #A8FF35;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 12px rgba(168, 255, 53, 0.15);
+}
+
+.neon-btn:hover:not(:disabled) {
+  background: transparent;
+  color: #A8FF35;
+  border-color: #A8FF35;
+  box-shadow: 0 0 16px rgba(168, 255, 53, 0.3);
+}
+
+.neon-btn:disabled {
+  background: var(--text-muted);
+  color: var(--text-secondary);
+  border-color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 8. Top Header styling specs */
+.header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: rgba(10, 10, 11, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(168, 255, 53, 0.15);
+  box-sizing: border-box;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-logo {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1;
+}
+
+.header-subtitle {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #A8FF35;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.header-center {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  color: #00F5FF;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  font-variant: small-caps;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Live Match Ticker Bar underneath Header */
+.live-status-ticker {
+  background: rgba(10, 10, 11, 0.85);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  padding: 8px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: monospace;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.live-status-ticker-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.live-status-ticker-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* 9. Prediction Pools & Trade Panel structure */
+.prediction-board-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  width: 100%;
+}
+
+.prediction-pools-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prediction-pools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.fast-trade-section {
+  width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.fast-trade-card {
+  background: #1F1F23;
+  border: 1px solid rgba(168, 255, 53, 0.2);
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 0 0 1px rgba(168,255,53,0.05), inset 0 1px 0 rgba(255,255,255,0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fast-trade-card:hover {
+  border-color: rgba(168,255,53,0.5);
+  box-shadow: 0 0 24px rgba(168,255,53,0.1);
+}
+
+/* Terminal logs for ZK proving steps */
+.zk-terminal-log {
+  background: #000000;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.8rem;
+  color: #00F5FF;
+  padding: 16px;
+  height: 180px;
+  overflow-y: auto;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.zk-terminal-log::-webkit-scrollbar-thumb {
+  background: var(--bg-card);
+}
+
+.zk-terminal-line {
+  margin-bottom: 4px;
+  white-space: pre-wrap;
+}
+
+.zk-terminal-line.success {
+  color: var(--accent-primary);
+}
+
+.zk-terminal-line.system {
+  color: var(--text-secondary);
+}
+
+/* Custom Badges */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-family: var(--font-heading);
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+}
+
+.status-badge.active {
+  background: rgba(0, 245, 255, 0.08);
+  color: var(--accent-secondary);
+  border-color: rgba(0, 245, 255, 0.2);
+}
+
+.status-badge.resolved {
+  background: rgba(168, 255, 53, 0.08);
+  color: var(--accent-primary);
+  border-color: rgba(168, 255, 53, 0.2);
+}
+
+.status-badge.closed {
+  background: rgba(142, 142, 147, 0.08);
+  color: var(--text-secondary);
+  border-color: rgba(142, 142, 147, 0.2);
+}
+
+/* 10. Mobile Responsiveness Overrides for Header */
+@media (max-width: 768px) {
+  .header-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .header-left {
+    align-items: center;
+  }
+
+  .header-center {
+    margin: 4px 0;
+  }
+
+  .header-right {
+    justify-content: center;
+  }
+
+  .live-status-ticker {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+    text-align: center;
+  }
+
+  .live-status-ticker-left, .live-status-ticker-right {
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .prediction-board-layout {
+    flex-direction: column;
+  }
+
+  .fast-trade-section {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   WEB3 WALLET HUD MODAL STYLES (PREMIUM)
+   ========================================== */
+
+/* Fullscreen Backdrop Blur Overlay */
+.wallet-hud-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(6, 6, 7, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+  padding: 20px !important;
+  box-sizing: border-box !important;
+}
+
+/* Glassmorphic floating card with subtle neon lime glow */
+.wallet-hud-card {
+  width: 100% !important;
+  max-width: 420px !important;
+  background: #0A0A0B !important;
+  border: 1px solid rgba(168, 255, 53, 0.15) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 
+              0 0 30px rgba(168, 255, 53, 0.05) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+/* Header styled as a secure console bar */
+.wallet-hud-header {
+  padding: 18px 24px !important;
+  border-bottom: 1px solid rgba(168, 255, 53, 0.1) !important;
+  background: rgba(18, 18, 20, 0.5) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.wallet-hud-title {
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.15em !important;
+  text-transform: uppercase !important;
+  color: #FFFFFF !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-shadow: 0 0 10px rgba(168, 255, 53, 0.2) !important;
+}
+
+.wallet-hud-close {
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+.wallet-hud-close:hover {
+  color: #FFFFFF !important;
+  transform: rotate(90deg) !important;
+}
+
+/* Modal Body */
+.wallet-hud-body {
+  padding: 24px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.wallet-hud-text {
+  font-size: 11px !important;
+  line-height: 1.6 !important;
+  color: var(--text-secondary) !important;
+  font-family: monospace !important;
+  margin-bottom: 4px !important;
+  text-align: left !important;
+}
+
+/* Connector buttons for OKX & MetaMask with high-end sci-fi response */
+.wallet-hud-connector-btn {
+  width: 100% !important;
+  background: #121214 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  padding: 16px 20px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-sizing: border-box !important;
+}
+
+.wallet-hud-connector-btn.primary-btn {
+  border-color: rgba(168, 255, 53, 0.2) !important;
+}
+
+.wallet-hud-connector-btn:hover {
+  background: rgba(168, 255, 53, 0.04) !important;
+  border-color: #A8FF35 !important;
+  box-shadow: 0 0 15px rgba(168, 255, 53, 0.1) !important;
+  transform: translateY(-2px) !important;
+}
+
+.wallet-hud-connector-btn.secondary-btn:hover {
+  background: rgba(0, 245, 255, 0.04) !important;
+  border-color: #00F5FF !important;
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.1) !important;
+}
+
+.wallet-hud-connector-label {
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.15em !important;
+  color: #FFFFFF !important;
+  text-align: left !important;
+}
+
+.wallet-hud-connector-btn:hover .wallet-hud-connector-label {
+  color: #A8FF35 !important;
+}
+
+.wallet-hud-connector-btn.secondary-btn:hover .wallet-hud-connector-label {
+  color: #00F5FF !important;
+}
+
+.wallet-hud-connector-sub {
+  font-size: 9px !important;
+  font-family: monospace !important;
+  color: var(--text-secondary) !important;
+  display: block !important;
+  margin-top: 4px !important;
+}
+
+/* Connected Stats Panel - High Tech Terminal Look */
+.wallet-hud-stats {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px !important;
+  padding: 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.wallet-hud-stat-item {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-family: monospace !important;
+  font-size: 11px !important;
+}
+
+.wallet-hud-stat-label {
+  color: var(--text-secondary) !important;
+  letter-spacing: 0.05em !important;
+}
+
+.wallet-hud-stat-val {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.wallet-hud-stat-val.green {
+  color: #A8FF35 !important;
+  text-shadow: 0 0 8px rgba(168, 255, 53, 0.3) !important;
+}
+
+.wallet-hud-stat-val.cyan {
+  color: #00F5FF !important;
+  text-shadow: 0 0 8px rgba(0, 245, 255, 0.3) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Sci-fi Disconnect Action button */
+.wallet-hud-disconnect-btn {
+  width: 100% !important;
+  background: transparent !important;
+  border: 1px solid rgba(255, 69, 58, 0.2) !important;
+  color: #FF453A !important;
+  border-radius: 10px !important;
+  padding: 14px 20px !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-sizing: border-box !important;
+}
+
+.wallet-hud-disconnect-btn:hover {
+  background: rgba(255, 69, 58, 0.08) !important;
+  border-color: #FF453A !important;
+  box-shadow: 0 0 15px rgba(255, 69, 58, 0.15) !important;
+  transform: translateY(1px) !important;
+}
