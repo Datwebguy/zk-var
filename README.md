@@ -1,16 +1,155 @@
-# React + Vite
+# ZK-VAR // Zero-Knowledge Video Assistant Referee
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Sovereign Referee Arena & Decentralized Sports Predictions on X Layer**
+> 
+> A decentralized sports prediction market and dispute resolution engine built for the **X Layer Build X Hackathon: X Cup**. Outcomes are resolved through a two-stage mechanism: a decentralized crowd-sourced jury tribunal and a Zero-Knowledge-verifiable AI Referee (SP1 ZK-VM) executing on-chain proofs.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ⚽ The Problem & The ZK-VAR Innovation
 
-## React Compiler
+Controversial refereeing decisions—like contested offsides, touchline exits, and penalties—frequently decide match outcomes. Traditional sports prediction markets rely on centralized third-party data oracles. These oracle APIs suffer from latency, single-point failures, and lack of accountability, leaving prediction outcomes subject to dispute or manipulation.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+**ZK-VAR** introduces a trustless, transparent model for resolving contentious sports events:
+1. **Decentralized Fan Jury Tribunal:** Fans stake native `OKB` to vote on active disputes, establishing a weighted consensus.
+2. **ZK-VM Proof Settlement:** A deterministic referee algorithm analyses game parameters (e.g. spatial coordinates of players and the ball). It generates a cryptographic proof in the **Succinct SP1 ZK-VM**. The proof is verified on-chain via a verifier contract to settle the dispute with mathematical finality, overriding/finalizing the prediction pools.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Deployed Smart Contracts (X Layer Testnet)
+
+All smart contracts are fully open-source, compiled, and deployed on the **X Layer Testnet (Chain ID: 195)** using native `OKB` tokens.
+
+| Contract Name | Deployed Address | Explorer Link |
+| :--- | :--- | :--- |
+| **PredictionPool.sol** | `0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F) |
+| **DisputeRegistry.sol**| `0x1F9a7E49D0339A53e47857D0D032121764058eF7` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x1F9a7E49D0339A53e47857D0D032121764058eF7) |
+| **ZKVerifier.sol**     | `0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296) |
+
+---
+
+## 📐 System Architecture
+
+```mermaid
+flowchart TD
+    subgraph Frontend [dApp Client]
+        UI[Premium HUD Interface]
+        Wallet[OKX Wallet / MetaMask]
+        ZKP[SP1 ZK-VM Proof Generator]
+    end
+
+    subgraph Contracts [X Layer L2 Contracts]
+        Pools[PredictionPool.sol]
+        Disputes[DisputeRegistry.sol]
+        Verifier[ZKVerifier.sol]
+    end
+
+    UI -->|Connect & Query| Wallet
+    Wallet -->|1. Place Bet| Pools
+    Wallet -->|2. Stake & Vote| Disputes
+    ZKP -->|3. Submit Proof bytes + Public Values| Verifier
+    Verifier -->|4. verify| SP1[ISP1Verifier Contract]
+    Verifier -->|5. resolveFromVerifier| Disputes
+    Disputes -->|6. resolvePrediction| Pools
+    Pools -->|7. Distribute OKB rewards| Wallet
+```
+
+### 1. PredictionPool.sol
+Handles prediction pool lifecycle (Creation, Betting, Resolution, Payout Claims, and Refund Claims). 
+* Users bet on outcomes `1 (Yes)` or `2 (No)` by sending native `OKB` to `placePrediction()`.
+* Resolution is locked until the `DisputeRegistry` contract provides the authoritative referee verdict.
+
+### 2. DisputeRegistry.sol
+Manages tribunals for controversial match plays. 
+* Fans stake `OKB` to back their vote choices: `Valid`, `Invalid`, or `Inconclusive`.
+* Winning voters receive their proportional share of the losing stakes via `claimJuryRewards()`.
+* The `resolveFromVerifier()` interface allows an authorized `ZKVerifier` contract to settle the dispute instantly, overriding the tribunal.
+
+### 3. ZKVerifier.sol
+Receives SP1 verification proofs.
+* Validates that the guest program public output parameters match the play details.
+* Interacts with Succinct's standard `ISP1Verifier` system contract deployed on X Layer to verify proofs.
+
+---
+
+## ⚡ Key Technical Workarounds & Stability Details
+
+* **Legacy Gas Pricing Bypass:** Testnet RPC providers often return unstable EIP-1559 fee headers, causing injected wallets (such as MetaMask or OKX Wallet) to fail with internal JSON-RPC error `code: -32603`. ZK-VAR bypasses this by fetching `getFeeData()` and overriding the transaction configuration with a legacy `gasPrice` parameter. This forces wallets to sign transactions smoothly.
+* **30% Gas Limit Buffer:** A 30% gas calculation buffer (`(estimatedGas * 130n) / 100n`) is applied to all on-chain operations to accommodate Layer 2 execution variance.
+
+---
+
+## ⚙️ Local Setup & Run Guide
+
+### 1. Prerequisites
+Ensure you have the following installed:
+* **Node.js** (v20+ recommended)
+* **Foundry** (for solidity tests and deployment scripts)
+
+### 2. Clone & Install Dependencies
+```bash
+git clone https://github.com/Datwebguy/zk-var.git
+cd zk-var
+npm install
+```
+
+### 3. Configure Local Environment
+Create a `.env` file in the root directory:
+```env
+PRIVATE_KEY=your_private_key_here
+RPC_URL=https://testrpc.xlayer.tech/terigon
+```
+*(The local `.env` is ignored by git to keep your private key secure.)*
+
+### 4. Running the Development Server
+```bash
+npm run dev
+```
+Open `http://localhost:3000` to interact with the ZK-VAR interface.
+
+### 5. Smart Contract Tests (Foundry)
+Execute the contract test suite:
+```bash
+forge test
+```
+
+---
+
+## 👁️ Judge's Walkthrough Guide (Step-by-Step Demo)
+
+Follow these steps to experience the complete live on-chain lifecycle:
+
+### Step 1: Connect your Wallet
+Open the dApp and connect your wallet (OKX Wallet or MetaMask) configured to **X Layer Testnet** (Chain ID: 195). Ensure you have some testnet `OKB` tokens.
+
+### Step 2: Place Predictions
+* Choose an active pool in the **Sovereign Referee Arena** (e.g. *Will the VAR check rule Messi's 42nd minute goal OFFSIDE?*).
+* Enter your prediction amount (e.g., `0.1 OKB`) and choose outcome **YES** or **NO**.
+* Click **Place Prediction** and confirm the transaction in your wallet.
+
+### Step 3: Vote in the Tribunal
+* Select the corresponding active dispute in the **Decentralized Tribunal Board**.
+* Stake a custom amount of `OKB` and cast your vote on the play (e.g., voting `Valid` / `Invalid`).
+
+### Step 4: Generate the ZK-VAR Proof
+* Scroll to the **ZK-AI Prover Terminal**.
+* Under the active dispute, select your verdict (e.g., **AI Referee Verdict: Offside detected**).
+* Click **Generate & Verify SP1 Proof**.
+* Watch the log terminal output the live SP1 compilation pipeline, VM boot, guest execution cycles, and proof compilation logs.
+* Approve the transaction in your wallet to submit the proof to `ZKVerifier.sol`.
+
+### Step 5: Claim Rewards
+* Once verified, the dispute status updates to **ResolvedByZK** on-chain, and the prediction pool is settled.
+* Go back to the panels to click **Claim Payout** (if you predicted correctly) and **Claim Jury Rewards** (if your tribunal stake backed the verified ZK outcome).
+
+---
+
+## 🏆 X Cup Hackathon Deliverables Status
+- [x] **Fully deployed on X Layer Testnet:** All contracts verified and working live.
+- [x] **No Mock Data:** The frontend reads strictly from on-chain contract events and states.
+- [x] **Zero-Knowledge integration:** Interactive SP1 proof verifications integrated.
+- [x] **OKX Wallet Integration:** Tested and optimized for OKX Wallet.
+
+---
+
+*Built with passion for the X Layer Build X Hackathon. Developed by [Datwebguy](https://github.com/Datwebguy).*
