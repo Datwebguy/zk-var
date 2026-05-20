@@ -4,7 +4,7 @@ import path from 'path';
 
 // Load .env manually if process.env variables are not defined (Node legacy support)
 let PRIVATE_KEY = process.env.PRIVATE_KEY;
-let RPC_URL = process.env.RPC_URL || "https://testrpc.xlayer.tech/terigon";
+let RPC_URL = process.env.RPC_URL || "https://testrpc.xlayer.tech";
 
 if (!PRIVATE_KEY) {
   try {

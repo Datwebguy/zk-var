@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ethers } from 'ethers';
-import { truncateAddress } from '../utils/contractHelpers';
+import { truncateAddress, XLAYER_RPC_URLS } from '../utils/contractHelpers';
 
 const XLAYER_TESTNET_PARAMS = {
   chainId: '0xc3', // 195 in hex
@@ -11,7 +11,7 @@ const XLAYER_TESTNET_PARAMS = {
     symbol: 'OKB',
     decimals: 18,
   },
-  rpcUrls: ['https://testrpc.xlayer.tech/terigon'],
+  rpcUrls: XLAYER_RPC_URLS,
   blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer-test'],
 };
 

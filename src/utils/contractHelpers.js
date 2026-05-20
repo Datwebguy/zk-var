@@ -8,7 +8,10 @@ export const CONTRACT_ADDRESSES = {
 };
 
 export const XLAYER_CHAIN_ID = 195;
-export const XLAYER_MIN_LEGACY_GAS_PRICE = ethers.parseUnits('1', 'gwei');
+export const XLAYER_RPC_URLS = [
+  "https://testrpc.xlayer.tech",
+  "https://xlayertestrpc.okx.com"
+];
 
 export const ZK_VERIFIER_ABI = [
   "function owner() view returns (address)",
@@ -83,20 +86,70 @@ export const getWeb3Provider = (walletType = '') => {
   return null;
 };
 
-export const applyXLayerLegacyFees = async (browserProvider, txOptions = {}) => {
-  if (!browserProvider) return txOptions;
+const safeJson = (value) => {
+  try {
+    return JSON.stringify(value, (key, nestedValue) => (
+      typeof nestedValue === 'bigint' ? nestedValue.toString() : nestedValue
+    ), 2);
+  } catch {
+    return String(value);
+  }
+};
 
-  const feeData = await browserProvider.getFeeData();
-  const networkGasPrice = feeData.gasPrice || 0n;
-  const gasPrice = networkGasPrice > XLAYER_MIN_LEGACY_GAS_PRICE
-    ? networkGasPrice
-    : XLAYER_MIN_LEGACY_GAS_PRICE;
+export const logRpcError = (label, error) => {
+  console.error(`[${label}]`, error);
+  console.error(`[${label}:json]`, safeJson(error));
+  console.error(`[${label}:info]`, error?.info || null);
+  console.error(`[${label}:error]`, error?.error || null);
+  console.error(`[${label}:cause]`, error?.cause || null);
+};
 
-  return {
-    ...txOptions,
-    type: 0,
-    gasPrice
-  };
+export const isEmptyWalletRpcError = (error) => {
+  const code = error?.code ?? error?.error?.code ?? error?.info?.error?.code;
+  const message = error?.message ?? error?.error?.message ?? error?.info?.error?.message ?? '';
+  const originalError = error?.error?.data?.originalError ?? error?.info?.error?.data?.originalError;
+
+  return (
+    code === -32603 ||
+    message.includes('-32603') ||
+    message.includes('could not coalesce error')
+  ) && (!originalError || Object.keys(originalError).length === 0);
+};
+
+export const decodeContractError = (error, contractInterface = null) => {
+  let errorData = error?.data || error?.error?.data || error?.info?.error?.data || error?.receipt?.data;
+
+  if (errorData && typeof errorData === 'object') {
+    errorData = errorData.data || errorData.originalError?.data;
+  }
+
+  if (typeof errorData === 'string') {
+    try {
+      if (errorData.startsWith('0x08c379a0')) {
+        const decoded = ethers.AbiCoder.defaultAbiCoder().decode(['string'], `0x${errorData.substring(10)}`);
+        return decoded[0];
+      }
+
+      if (errorData.startsWith('0x4e487b71')) {
+        const [panicCode] = ethers.AbiCoder.defaultAbiCoder().decode(['uint256'], `0x${errorData.substring(10)}`);
+        return `Solidity panic: 0x${panicCode.toString(16)}`;
+      }
+
+      if (contractInterface) {
+        const parsedError = contractInterface.parseError(errorData);
+        if (parsedError) {
+          return `${parsedError.name}(${parsedError.args.join(', ')})`;
+        }
+      }
+    } catch (decodeError) {
+      console.warn("Failed to decode contract error data:", decodeError);
+    }
+  }
+
+  if (error?.reason) return error.reason;
+  if (error?.shortMessage) return error.shortMessage;
+  if (error?.message?.includes('user rejected')) return "Transaction rejected by user in Web3 wallet.";
+  return error?.message || "Transaction failed";
 };
 
 // Simple helper to format hashes nicely: 0x1234...5678

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { encodePublicValues, generateMockProofBytes } from '../utils/zkHelpers';
-import { CONTRACT_ADDRESSES, ZK_VERIFIER_ABI, getWeb3Provider, applyXLayerLegacyFees } from '../utils/contractHelpers';
+import { CONTRACT_ADDRESSES, ZK_VERIFIER_ABI, decodeContractError, getWeb3Provider, logRpcError } from '../utils/contractHelpers';
 import { ethers } from 'ethers';
 
 export const useZKProof = () => {
@@ -40,12 +40,13 @@ export const useZKProof = () => {
       addLogLine(`[SYSTEM] Broadcasting ZK proof payload to ZKVerifier.sol on X Layer...`);
       addLogLine(`[SYSTEM] Awaiting signature in Web3 Wallet...`);
 
+      let contract = null;
       try {
         const browserProvider = getWeb3Provider(walletType);
         if (!browserProvider) throw new Error("Web3 provider missing");
 
         const signer = await browserProvider.getSigner();
-        const contract = new ethers.Contract(
+        contract = new ethers.Contract(
           CONTRACT_ADDRESSES.ZKVerifier,
           ZK_VERIFIER_ABI,
           signer
@@ -61,14 +62,6 @@ export const useZKProof = () => {
         addLogLine(`[SYSTEM] Estimating gas and submitting ZK proof transaction: verifyPlayProof(${playId}, ${isOffside})...`);
         let txOptions = {};
         try {
-          txOptions = await applyXLayerLegacyFees(browserProvider, txOptions);
-          addLogLine(`[SYSTEM] Applying legacy type-0 gasPrice override: ${txOptions.gasPrice.toString()} wei`);
-        } catch (feeError) {
-          console.warn("Failed to fetch legacy gas price for ZK proof verification:", feeError);
-          addLogLine(`[SYSTEM] Gas price lookup failed, wallet will provide fee fields.`);
-        }
-
-        try {
           const estimatedGas = await contract.verifyPlayProof.estimateGas(
             playId,
             isOffside,
@@ -79,9 +72,17 @@ export const useZKProof = () => {
           txOptions.gasLimit = (estimatedGas * 130n) / 100n;
           addLogLine(`[SYSTEM] Gas estimated: ${estimatedGas.toString()}. Applied gasLimit (with 30% buffer): ${txOptions.gasLimit.toString()}`);
         } catch (estError) {
-          console.warn("Failed to estimate gas for ZK proof verification:", estError);
+          logRpcError("ZK gas estimation failed", estError);
           addLogLine(`[SYSTEM] Gas estimation failed, letting wallet handle estimation.`);
         }
+
+        addLogLine(`[SYSTEM] Using wallet-native fee selection; no legacy type-0 override is applied.`);
+        console.log("[ZK TRANSACTION] verifyPlayProof payload:", {
+          to: CONTRACT_ADDRESSES.ZKVerifier,
+          playId,
+          isOffside,
+          txOptions
+        });
 
         const tx = await contract.verifyPlayProof(
           playId,
@@ -103,8 +104,8 @@ export const useZKProof = () => {
         if (onComplete) onComplete(tx.hash);
         return tx.hash;
       } catch (error) {
-        console.error("ZK verification contract transaction failed:", error);
-        throw error; // Propagate to ZK proving pipeline catch block
+        logRpcError("ZK verification contract transaction failed", error);
+        throw new Error(decodeContractError(error, contract?.interface), { cause: error });
       } finally {
         setTxLoading(false);
       }
