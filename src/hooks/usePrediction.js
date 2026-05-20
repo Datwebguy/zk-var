@@ -33,23 +33,6 @@ export const usePrediction = () => {
   const [loading, setLoading] = useState(false);
   const [contractOwner, setContractOwner] = useState(null);
 
-  // Query contract owner address dynamically
-  const fetchContractOwner = useCallback(async () => {
-    try {
-      const contract = await getContract('PredictionPool');
-      if (contract) {
-        const owner = await contract.owner();
-        setContractOwner(owner);
-      }
-    } catch (error) {
-      console.error("Failed to fetch contract owner address:", error);
-    }
-  }, [getContract]);
-
-  useEffect(() => {
-    fetchContractOwner();
-  }, [fetchContractOwner, walletConnected]);
-
   // Helper to instantiate active contract instance
   const getContract = useCallback(async (contractType, needsSigner = false) => {
     let provider = null;
@@ -73,6 +56,23 @@ export const usePrediction = () => {
       return new ethers.Contract(address, abi, provider);
     }
   }, [walletConnected]);
+
+  // Query contract owner address dynamically
+  const fetchContractOwner = useCallback(async () => {
+    try {
+      const contract = await getContract('PredictionPool');
+      if (contract) {
+        const owner = await contract.owner();
+        setContractOwner(owner);
+      }
+    } catch (error) {
+      console.error("Failed to fetch contract owner address:", error);
+    }
+  }, [getContract]);
+
+  useEffect(() => {
+    fetchContractOwner();
+  }, [fetchContractOwner, walletConnected]);
 
   /**
    * @notice Fetch live prediction pool states from X Layer Testnet
