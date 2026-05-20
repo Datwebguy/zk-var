@@ -7,6 +7,9 @@ export const CONTRACT_ADDRESSES = {
   PredictionPool: "0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F"
 };
 
+export const XLAYER_CHAIN_ID = 195;
+export const XLAYER_MIN_LEGACY_GAS_PRICE = ethers.parseUnits('1', 'gwei');
+
 export const ZK_VERIFIER_ABI = [
   "function owner() view returns (address)",
   "function disputeRegistry() view returns (address)",
@@ -54,16 +57,46 @@ export const PREDICTION_POOL_ABI = [
   "event PoolResolved(uint256 indexed poolId, uint8 winningOutcome)"
 ];
 
-// Helper to check for active Web3 wallet injector
-export const getWeb3Provider = () => {
+// Helper to check for the active Web3 wallet injector selected by app state.
+export const getInjectedProvider = (walletType = '') => {
   if (typeof window !== 'undefined') {
-    // OKX Wallet is window.okxwallet
-    const provider = window.okxwallet || window.ethereum;
-    if (provider) {
-      return new ethers.BrowserProvider(provider);
+    if (walletType === 'okx') {
+      return window.okxwallet || null;
     }
+
+    if (walletType === 'metamask') {
+      return window.ethereum || null;
+    }
+
+    return window.okxwallet || window.ethereum || null;
+  }
+
+  return null;
+};
+
+// Helper to create an ethers v6 BrowserProvider from the selected wallet injector.
+export const getWeb3Provider = (walletType = '') => {
+  const provider = getInjectedProvider(walletType);
+  if (provider) {
+    return new ethers.BrowserProvider(provider);
   }
   return null;
+};
+
+export const applyXLayerLegacyFees = async (browserProvider, txOptions = {}) => {
+  if (!browserProvider) return txOptions;
+
+  const feeData = await browserProvider.getFeeData();
+  const networkGasPrice = feeData.gasPrice || 0n;
+  const gasPrice = networkGasPrice > XLAYER_MIN_LEGACY_GAS_PRICE
+    ? networkGasPrice
+    : XLAYER_MIN_LEGACY_GAS_PRICE;
+
+  return {
+    ...txOptions,
+    type: 0,
+    gasPrice
+  };
 };
 
 // Simple helper to format hashes nicely: 0x1234...5678
@@ -77,7 +110,7 @@ export const formatEtherVal = (val) => {
   if (!val) return '0.00';
   try {
     return parseFloat(ethers.formatEther(val)).toFixed(2);
-  } catch (e) {
+  } catch {
     return '0.00';
   }
 };

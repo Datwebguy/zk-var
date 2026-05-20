@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { encodePublicValues, generateMockProofBytes } from '../utils/zkHelpers';
-import { CONTRACT_ADDRESSES, ZK_VERIFIER_ABI, getWeb3Provider } from '../utils/contractHelpers';
+import { CONTRACT_ADDRESSES, ZK_VERIFIER_ABI, getWeb3Provider, applyXLayerLegacyFees } from '../utils/contractHelpers';
 import { ethers } from 'ethers';
 
 export const useZKProof = () => {
@@ -14,6 +14,7 @@ export const useZKProof = () => {
     startZKProofPipeline,
     resetZKProofPipeline,
     walletConnected,
+    walletType,
     addNotification
   } = useAppStore();
 
@@ -40,7 +41,7 @@ export const useZKProof = () => {
       addLogLine(`[SYSTEM] Awaiting signature in Web3 Wallet...`);
 
       try {
-        const browserProvider = getWeb3Provider();
+        const browserProvider = getWeb3Provider(walletType);
         if (!browserProvider) throw new Error("Web3 provider missing");
 
         const signer = await browserProvider.getSigner();
@@ -58,13 +59,22 @@ export const useZKProof = () => {
 
         // 3. Call ZKVerifier.verifyPlayProof(...) with estimated gas limit and safety buffer
         addLogLine(`[SYSTEM] Estimating gas and submitting ZK proof transaction: verifyPlayProof(${playId}, ${isOffside})...`);
-        const txOptions = {};
+        let txOptions = {};
+        try {
+          txOptions = await applyXLayerLegacyFees(browserProvider, txOptions);
+          addLogLine(`[SYSTEM] Applying legacy type-0 gasPrice override: ${txOptions.gasPrice.toString()} wei`);
+        } catch (feeError) {
+          console.warn("Failed to fetch legacy gas price for ZK proof verification:", feeError);
+          addLogLine(`[SYSTEM] Gas price lookup failed, wallet will provide fee fields.`);
+        }
+
         try {
           const estimatedGas = await contract.verifyPlayProof.estimateGas(
             playId,
             isOffside,
             publicValues,
-            proofBytes
+            proofBytes,
+            txOptions
           );
           txOptions.gasLimit = (estimatedGas * 130n) / 100n;
           addLogLine(`[SYSTEM] Gas estimated: ${estimatedGas.toString()}. Applied gasLimit (with 30% buffer): ${txOptions.gasLimit.toString()}`);
@@ -103,7 +113,7 @@ export const useZKProof = () => {
     // Trigger the interactive visual proving pipeline with custom verification function
     startZKProofPipeline(playId, isOffside, verifyTxFn);
 
-  }, [isZKProving, walletConnected, startZKProofPipeline, addNotification]);
+  }, [isZKProving, walletConnected, walletType, startZKProofPipeline, addNotification]);
 
   return {
     isZKProving,

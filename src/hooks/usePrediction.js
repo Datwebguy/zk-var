@@ -6,6 +6,8 @@ import {
   PREDICTION_POOL_ABI,
   DISPUTE_REGISTRY_ABI,
   getWeb3Provider,
+  getInjectedProvider,
+  applyXLayerLegacyFees,
   formatEtherVal
 } from '../utils/contractHelpers';
 
@@ -48,7 +50,7 @@ export const usePrediction = () => {
   // Helper to query and refresh on-chain wallet balance dynamically
   const refreshBalance = useCallback(async () => {
     if (!walletConnected || !userAddress || typeof window === 'undefined') return;
-    const provider = walletType === 'okx' ? window.okxwallet : window.ethereum;
+    const provider = getInjectedProvider(walletType);
     if (!provider) return;
     try {
       const browserProvider = new ethers.BrowserProvider(provider);
@@ -64,7 +66,7 @@ export const usePrediction = () => {
   const getContract = useCallback(async (contractType, needsSigner = false) => {
     let provider = null;
     if (walletConnected) {
-      provider = getWeb3Provider();
+      provider = getWeb3Provider(walletType);
     }
     
     // Fallback to public RPC if no wallet connected or no provider (for read-only queries)
@@ -82,23 +84,36 @@ export const usePrediction = () => {
     } else {
       return new ethers.Contract(address, abi, provider);
     }
-  }, [walletConnected]);
+  }, [walletConnected, walletType]);
 
   // Query contract owner address dynamically
   const fetchContractOwner = useCallback(async () => {
     try {
       const contract = await getContract('PredictionPool');
       if (contract) {
-        const owner = await contract.owner();
-        setContractOwner(owner);
+        return await contract.owner();
       }
     } catch (error) {
       console.error("Failed to fetch contract owner address:", error);
     }
+    return null;
   }, [getContract]);
 
   useEffect(() => {
-    fetchContractOwner();
+    let cancelled = false;
+
+    const loadContractOwner = async () => {
+      const owner = await fetchContractOwner();
+      if (!cancelled && owner) {
+        setContractOwner(owner);
+      }
+    };
+
+    loadContractOwner();
+
+    return () => {
+      cancelled = true;
+    };
   }, [fetchContractOwner, walletConnected]);
 
   /**
@@ -260,14 +275,11 @@ export const usePrediction = () => {
       const txOptions = value ? { value } : {};
       
       // Override fee parameters with legacy gasPrice to avoid wallet EIP-1559 calculation errors on X Layer
-      const browserProvider = getWeb3Provider();
+      const browserProvider = getWeb3Provider(walletType);
       if (browserProvider) {
         try {
-          const feeData = await browserProvider.getFeeData();
-          if (feeData.gasPrice) {
-            txOptions.gasPrice = feeData.gasPrice;
-            console.log(`[TRANSACTION] Applying legacy gasPrice override to bypass EIP-1559: ${txOptions.gasPrice.toString()} wei`);
-          }
+          Object.assign(txOptions, await applyXLayerLegacyFees(browserProvider, txOptions));
+          console.log(`[TRANSACTION] Applying legacy type-0 gasPrice override: ${txOptions.gasPrice.toString()} wei`);
         } catch (feeError) {
           console.warn(`[TRANSACTION] Failed to fetch fee data for legacy gasPrice override:`, feeError);
         }
@@ -303,7 +315,7 @@ export const usePrediction = () => {
     } finally {
       setLoading(false);
     }
-  }, [getContract, addNotification, refreshBalance]);
+  }, [getContract, addNotification, refreshBalance, walletType]);
 
   /**
    * @notice Place prediction on-chain on X Layer Testnet, with safe local state failover
@@ -324,7 +336,7 @@ export const usePrediction = () => {
         throw new Error("PredictionPool contract instance not initialized.");
       }
 
-      const browserProvider = getWeb3Provider();
+      const browserProvider = getWeb3Provider(walletType);
       if (!browserProvider) {
         throw new Error("Web3 provider missing.");
       }
@@ -403,7 +415,7 @@ export const usePrediction = () => {
         console.error("[SIMULATION] eth_call simulation failed! Revert details:", simError);
         try {
           console.error("[SIMULATION RAW ERROR]", JSON.stringify(simError, (key, value) => typeof value === 'bigint' ? value.toString() : value, 2));
-        } catch (e) {
+        } catch {
           console.error("[SIMULATION RAW ERROR]", simError);
         }
         
@@ -438,21 +450,18 @@ export const usePrediction = () => {
         
         const finalSimError = `Simulation failed on-chain: ${revertReason}`;
         addNotification('error', finalSimError);
-        throw new Error(finalSimError);
+        throw new Error(finalSimError, { cause: simError });
       }
 
       // --- 2 & 5. BROADCAST & DECODE CUSTOM ERRORS: Surface and throw the real revert message ---
       console.log("[TRANSACTION] Estimating gas and preparing broadcast options...");
       
-      const txOptions = { value: txValue };
+      let txOptions = { value: txValue };
       
       // Override fee parameters with legacy gasPrice to avoid wallet EIP-1559 calculation errors on X Layer
       try {
-        const feeData = await browserProvider.getFeeData();
-        if (feeData.gasPrice) {
-          txOptions.gasPrice = feeData.gasPrice;
-          console.log(`[TRANSACTION] Applying legacy gasPrice override to bypass EIP-1559: ${txOptions.gasPrice.toString()} wei`);
-        }
+        txOptions = await applyXLayerLegacyFees(browserProvider, txOptions);
+        console.log(`[TRANSACTION] Applying legacy type-0 gasPrice override: ${txOptions.gasPrice.toString()} wei`);
       } catch (feeError) {
         console.warn("[TRANSACTION] Failed to fetch fee data for legacy gasPrice override:", feeError);
       }
@@ -468,6 +477,16 @@ export const usePrediction = () => {
 
       if (gasLimit) txOptions.gasLimit = gasLimit;
 
+      if (gasLimit && txOptions.gasPrice) {
+        const requiredBalance = txValue + (gasLimit * txOptions.gasPrice);
+        if (balance < requiredBalance) {
+          const errorMsg = `Insufficient OKB balance for stake plus gas. Wallet has: ${ethers.formatEther(balance)} OKB, estimated need: ${ethers.formatEther(requiredBalance)} OKB.`;
+          console.error(`[PRE-FLIGHT] ${errorMsg}`);
+          addNotification('error', `Pre-flight failed: ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+      }
+
       addNotification('pending', `Submitting prediction to wallet: ${amount} OKB...`);
       const tx = await contract.placePrediction(poolId, outcome, txOptions);
       addNotification('pending', `Transaction submitted. Awaiting block confirmation...`, tx.hash);
@@ -477,6 +496,7 @@ export const usePrediction = () => {
       
       await fetchPredictionPools(true);
       await refreshBalance();
+      return true;
     } catch (error) {
       // Decode the error using ethers v6
       let decodedMessage = error.message || "Transaction failed";
@@ -513,11 +533,11 @@ export const usePrediction = () => {
 
       console.error(`[TRANSACTION FAILED] ${decodedMessage}`, error);
       addNotification('error', `Transaction execution failed: ${decodedMessage}`);
-      throw new Error(decodedMessage);
+      return false;
     } finally {
       setLoading(false);
     }
-  }, [walletConnected, getContract, fetchPredictionPools, refreshBalance, addNotification]);
+  }, [walletConnected, walletType, getContract, fetchPredictionPools, refreshBalance, addNotification]);
 
   /**
    * @notice Cast fan jury vote on-chain on X Layer Testnet
