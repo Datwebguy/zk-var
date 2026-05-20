@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useZKProof } from '../hooks/useZKProof';
 import { Terminal, ShieldCheck, Activity, Cpu } from 'lucide-react';
-import { truncateAddress } from '../utils/contractHelpers';
+import { truncateAddress, CONTRACT_ADDRESSES } from '../utils/contractHelpers';
 
 export const ZKProver = () => {
   const {
@@ -20,7 +20,7 @@ export const ZKProver = () => {
   // Default calm logs shown when the prover is idle (waiting for a trigger)
   const defaultLogs = [
     "[SYSTEM] SP1 RISC-V Verifiable Inference engine loaded.",
-    "[SYSTEM] Verifier Contract: 0xc4C9cEa4f91040375D351DDCe834608c0dB0D9dE",
+    `[SYSTEM] Verifier Contract: ${CONTRACT_ADDRESSES.ZKVerifier}`,
     "[SYSTEM] X Layer Testnet Verifier Node: ONLINE (Chain ID: 195)",
     "[SYSTEM] Standing by for Fan Jury Dispute triggers..."
   ];
@@ -174,7 +174,7 @@ export const ZKProver = () => {
         ctx.font = '500 8.5px monospace';
         ctx.fillText(`SP1 PROVER STATS: STANDBY`, 20, 30);
         ctx.fillText(`TARGET: xlayer_testnet_195`, 20, 45);
-        ctx.fillText(`VERIFIER CONTRACT: 0xc4C9...`, 20, 60);
+        ctx.fillText(`VERIFIER CONTRACT: ${CONTRACT_ADDRESSES.ZKVerifier.substring(0, 8)}...`, 20, 60);
 
         // Core visual target in Standby mode
         ctx.strokeStyle = 'rgba(0, 245, 255, 0.25)';

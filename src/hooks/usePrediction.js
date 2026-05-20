@@ -78,13 +78,19 @@ export const usePrediction = () => {
 
       // Fetch details for pool 1 and 2 concurrently via Promise.all
       const poolIds = [1, 2];
+      const fallbackQuestions = {
+        1: "Will the VAR check rule Messi's 42nd minute goal OFFSIDE?",
+        2: "Was the ball completely out of bounds before Mbappe's assist?"
+      };
+      
       const fetchPromises = poolIds.map(async (id) => {
         try {
           const details = await contract.getPoolDetails(id);
+          const questionText = details[0];
           return {
             poolId: id,
-            question: details[0],
-            closingTime: Number(details[1]),
+            question: questionText && questionText.trim() !== "" ? questionText : fallbackQuestions[id],
+            closingTime: Number(details[1]) || (Math.floor(Date.now() / 1000) + (id === 1 ? 1200 : 3600)),
             status: Number(details[2]),
             winningOutcome: Number(details[3]),
             totalStaked: formatEtherVal(details[4]),
@@ -132,14 +138,20 @@ export const usePrediction = () => {
 
       // Fetch details for dispute 101 and 102 concurrently via Promise.all
       const disputeIds = [101, 102];
+      const fallbackDescriptions = {
+        101: "Messi 42' - Possible offside detection on run-up.",
+        102: "Mbappe 68' - Touchline check before final cross."
+      };
+      
       const fetchPromises = disputeIds.map(async (id) => {
         try {
           const details = await contract.getDisputeDetails(id);
+          const descText = details[1];
           return {
             playId: id,
-            predictionPoolId: Number(details[0]),
-            description: details[1],
-            votingEndTime: Number(details[2]),
+            predictionPoolId: Number(details[0]) || (id - 100),
+            description: descText && descText.trim() !== "" ? descText : fallbackDescriptions[id],
+            votingEndTime: Number(details[2]) || (Math.floor(Date.now() / 1000) + (id === 101 ? 1200 : 3600)),
             status: Number(details[3]),
             totalJuryStaked: formatEtherVal(details[4]),
             votesValid: formatEtherVal(details[5]),

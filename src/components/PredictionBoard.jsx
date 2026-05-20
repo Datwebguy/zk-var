@@ -50,12 +50,15 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
         <div className="prediction-pools-grid">
           {predictionPools.map((pool) => {
             const isActive = pool.disputeId === activePlayId;
-            const totalStakedVal = parseFloat(pool.totalStaked);
+            const totalStakedVal = parseFloat(pool.totalStaked) || 0;
+            const staked1Val = parseFloat(pool.stakedOutcome1) || 0;
+            const staked2Val = parseFloat(pool.stakedOutcome2) || 0;
+
             const pctOutcome1 = totalStakedVal > 0 
-              ? ((parseFloat(pool.stakedOutcome1) / totalStakedVal) * 100).toFixed(0) 
+              ? ((staked1Val / totalStakedVal) * 100).toFixed(0) 
               : '50';
             const pctOutcome2 = totalStakedVal > 0 
-              ? ((parseFloat(pool.stakedOutcome2) / totalStakedVal) * 100).toFixed(0) 
+              ? ((staked2Val / totalStakedVal) * 100).toFixed(0) 
               : '50';
 
             return (
