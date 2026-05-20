@@ -130,14 +130,54 @@ const sendViaContract = async ({ contract, poolId, outcome, txOptions, label }) 
   return tx;
 };
 
-const sendViaSigner = async ({ signer, txData, label }) => {
-  console.log(`[TRANSACTION] ${label} payload:`, txData);
-  const tx = await signer.sendTransaction(txData);
-  console.log(`[TRANSACTION] ${label} submitted: ${tx.hash}`);
-  return tx;
+const toWalletTransaction = (txData) => ({
+  from: txData.from,
+  to: txData.to,
+  data: txData.data,
+  value: ethers.toQuantity(txData.value)
+});
+
+const sendViaInjectedWallet = async ({ injectedProvider, provider, txData, label }) => {
+  const walletTx = toWalletTransaction(txData);
+  console.log(`[TRANSACTION] ${label} payload:`, walletTx);
+  const hash = await injectedProvider.request({
+    method: 'eth_sendTransaction',
+    params: [walletTx]
+  });
+  console.log(`[TRANSACTION] ${label} submitted: ${hash}`);
+
+  return {
+    hash,
+    wait: () => provider.waitForTransaction(hash)
+  };
 };
 
-const broadcastPrediction = async ({ contract, signer, txData, poolId, outcome, value, gasLimit }) => {
+const isUserRejectedError = (error) => (
+  error?.code === 4001 ||
+  error?.code === 'ACTION_REJECTED' ||
+  error?.info?.error?.code === 4001 ||
+  error?.message?.includes('user rejected') ||
+  error?.message?.includes('User denied')
+);
+
+const broadcastPrediction = async ({ contract, injectedProvider, provider, txData, poolId, outcome, value, gasLimit }) => {
+  try {
+    return await sendViaInjectedWallet({
+      injectedProvider,
+      provider,
+      txData,
+      label: 'direct injected wallet send'
+    });
+  } catch (directError) {
+    logRpcError('TRANSACTION DIRECT WALLET SEND FAILED', directError);
+
+    if (isUserRejectedError(directError)) {
+      throw directError;
+    }
+
+    console.warn("[TRANSACTION] Direct wallet send failed before signature. Falling back to ethers contract method.");
+  }
+
   try {
     const txOptions = gasLimit ? { value, gasLimit } : { value };
     return await sendViaContract({
@@ -170,11 +210,12 @@ const broadcastPrediction = async ({ contract, signer, txData, poolId, outcome, 
         throw retryError;
       }
 
-      console.warn("[TRANSACTION] Contract method retry failed with empty wallet RPC error. Falling back to signer.sendTransaction.");
-      return await sendViaSigner({
-        signer,
+      console.warn("[TRANSACTION] Contract method retry failed with empty wallet RPC error. Falling back to direct injected wallet send.");
+      return await sendViaInjectedWallet({
+        injectedProvider,
+        provider,
         txData,
-        label: 'raw signer.sendTransaction fallback'
+        label: 'direct injected wallet fallback'
       });
     }
   }
@@ -423,6 +464,9 @@ export const usePrediction = () => {
       const provider = getWeb3Provider(walletType);
       if (!provider) throw new Error("Web3 provider missing.");
 
+      const injectedProvider = getInjectedProvider(walletType);
+      if (!injectedProvider) throw new Error("Injected wallet provider missing.");
+
       const signer = await provider.getSigner();
       const connectedAddress = await signer.getAddress();
 
@@ -447,7 +491,8 @@ export const usePrediction = () => {
       addNotification('pending', `Submitting prediction to wallet: ${amount} OKB...`);
       const tx = await broadcastPrediction({
         contract,
-        signer,
+        injectedProvider,
+        provider,
         txData,
         poolId,
         outcome,
