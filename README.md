@@ -2,7 +2,7 @@
 
 > **Sovereign Referee Arena & Decentralized Sports Predictions on X Layer**
 > 
-> A decentralized sports prediction market and dispute resolution engine built for the **X Layer Build X Hackathon: X Cup**. Outcomes are resolved through a two-stage mechanism: a decentralized crowd-sourced jury tribunal and a Zero-Knowledge-verifiable AI Referee (SP1 ZK-VM) executing on-chain proofs.
+> A decentralized sports prediction market and dispute resolution engine. Outcomes are resolved through a two-stage mechanism: a decentralized crowd-sourced jury tribunal and a Zero-Knowledge-verifiable AI Referee (SP1 ZK-VM) executing on-chain proofs.
 
 ---
 
@@ -115,7 +115,7 @@ forge test
 
 ---
 
-## 👁️ Judge's Walkthrough Guide (Step-by-Step Demo)
+## 👁️ Walkthrough Guide (Step-by-Step Flow)
 
 Follow these steps to experience the complete live on-chain lifecycle:
 
@@ -144,7 +144,7 @@ Open the dApp and connect your wallet (OKX Wallet or MetaMask) configured to **X
 
 ---
 
-## 🏆 X Cup Hackathon Deliverables Status
+## 🏆 Production Deployment Status
 - [x] **Fully deployed on X Layer Testnet:** All contracts verified and working live.
 - [x] **No Mock Data:** The frontend reads strictly from on-chain contract events and states.
 - [x] **Zero-Knowledge integration:** Interactive SP1 proof verifications integrated.
@@ -152,4 +152,4 @@ Open the dApp and connect your wallet (OKX Wallet or MetaMask) configured to **X
 
 ---
 
-*Built with passion for the X Layer Build X Hackathon. Developed by [Datwebguy](https://github.com/Datwebguy).*
+*Developed by [Datwebguy](https://github.com/Datwebguy).*
