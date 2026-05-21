@@ -15,7 +15,7 @@ import {
 } from '../utils/transactionHistory';
 
 const LOG_CHUNK_SIZE = 100;
-const DEFAULT_LOOKBACK_BLOCKS = 12000;
+const DEFAULT_LOOKBACK_BLOCKS = 1000;
 const MAX_PUBLIC_ITEMS = 30;
 const MAX_PERSONAL_CHAIN_ITEMS = 30;
 
@@ -108,6 +108,7 @@ export const useTransactionHistory = (walletAddress) => {
   }, [walletAddress]);
 
   const refreshChainHistory = useCallback(async () => {
+    loadLocalHistory();
     setLoading(true);
     setError('');
 
@@ -205,7 +206,7 @@ export const useTransactionHistory = (walletAddress) => {
     } finally {
       setLoading(false);
     }
-  }, [walletAddress]);
+  }, [loadLocalHistory, walletAddress]);
 
   useEffect(() => {
     queueMicrotask(loadLocalHistory);
@@ -214,10 +215,13 @@ export const useTransactionHistory = (walletAddress) => {
   }, [loadLocalHistory, refreshChainHistory]);
 
   useEffect(() => {
-    const onHistoryUpdate = () => loadLocalHistory();
+    const onHistoryUpdate = () => {
+      loadLocalHistory();
+      window.setTimeout(refreshChainHistory, 3000);
+    };
     window.addEventListener(TX_HISTORY_EVENT, onHistoryUpdate);
     return () => window.removeEventListener(TX_HISTORY_EVENT, onHistoryUpdate);
-  }, [loadLocalHistory]);
+  }, [loadLocalHistory, refreshChainHistory]);
 
   const personalHistory = useMemo(() => {
     const merged = [...personalLocalHistory, ...personalChainHistory];

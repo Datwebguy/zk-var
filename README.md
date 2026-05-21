@@ -111,7 +111,7 @@ VITE_REOWN_PROJECT_ID=your_reown_project_id_here
 
 # Optional history scan tuning for the deployed contracts
 VITE_HISTORY_START_BLOCK=30819655
-VITE_HISTORY_LOOKBACK_BLOCKS=12000
+VITE_HISTORY_LOOKBACK_BLOCKS=1000
 ```
 *(The local `.env` is ignored by git to keep your private key secure.)*
 

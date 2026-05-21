@@ -258,6 +258,15 @@ export const usePrediction = () => {
       });
 
       addNotification('pending', 'Transaction submitted. Awaiting confirmation...', hash);
+      savePersonalTransaction(address, {
+        hash,
+        type: history?.type || method,
+        label: history?.label || pendingMsg,
+        amount: history?.amount || '',
+        target: history?.target || '',
+        status: 'submitted'
+      });
+
       await waitForTransactionReceipt(config, {
         hash,
         chainId: xLayerTestnet.id

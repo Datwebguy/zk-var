@@ -127,6 +127,11 @@ export const TransactionHistory = () => {
               Blocks {scannedRange.fromBlock} - {scannedRange.toBlock}
             </span>
           )}
+          {loading && (
+            <span className="text-[#00F5FF]">
+              Syncing X Layer logs...
+            </span>
+          )}
         </div>
 
         {error && (
@@ -135,9 +140,13 @@ export const TransactionHistory = () => {
           </div>
         )}
 
-        {loading ? (
+        {loading && showingPersonal && personalHistory.length === 0 ? (
           <div className="border border-zinc-800 rounded-lg bg-black/50 px-4 py-6 text-center text-3xs font-mono text-zinc-500">
-            Loading X Layer history...
+            Loading wallet history...
+          </div>
+        ) : loading && !showingPersonal && publicHistory.length === 0 ? (
+          <div className="border border-zinc-800 rounded-lg bg-black/50 px-4 py-6 text-center text-3xs font-mono text-zinc-500">
+            Loading market feed...
           </div>
         ) : showingPersonal ? (
           <HistoryList
