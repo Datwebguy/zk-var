@@ -102,6 +102,39 @@ The connection modal supports MetaMask, WalletConnect mobile wallets, Coinbase W
 
 ---
 
+## 🚀 Vercel Deployment
+
+ZK-VAR is a Vite frontend and can be deployed directly to Vercel.
+
+### Required Vercel Settings
+
+```text
+Framework Preset: Vite
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
+```
+
+The repository includes `vercel.json` with SPA rewrites, so direct links and refreshes on pages like `/markets`, `/tribunal`, and `/history` load correctly.
+
+### Required Vercel Environment Variables
+
+Add these in **Vercel Project Settings → Environment Variables**:
+
+```env
+VITE_REOWN_PROJECT_ID=your_reown_project_id_here
+VITE_HISTORY_START_BLOCK=30819655
+VITE_HISTORY_LOOKBACK_BLOCKS=1000
+```
+
+Do **not** add `PRIVATE_KEY` to Vercel for the frontend deployment. `PRIVATE_KEY`, `RPC_URL`, and `RPC_FALLBACK_URL` are only used by local contract scripts such as `initialize.js` and `query.js`.
+
+### Reown / WalletConnect Domain Setup
+
+After Vercel gives you a production URL, add that domain to your Reown project at [dashboard.reown.com](https://dashboard.reown.com). WalletConnect may fail or show warnings if the deployed domain is not allowed in the Reown project settings.
+
+---
+
 ## ⚙️ Local Setup & Run Guide
 
 ### 1. Prerequisites
