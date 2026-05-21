@@ -13,6 +13,7 @@ export const useAppStore = create((set, get) => ({
   disputes: [],
   userPoolBets: {},
   userDisputeVotes: {},
+  contractOwner: '',
 
   // ZK VM Pipeline State (SP1 Succinct)
   isZKProving: false,
@@ -70,6 +71,8 @@ export const useAppStore = create((set, get) => ({
   setUserPoolBets: (bets) => set({ userPoolBets: bets }),
 
   setUserDisputeVotes: (votes) => set({ userDisputeVotes: votes }),
+
+  setContractOwner: (contractOwner) => set({ contractOwner }),
 
   // ZK-VM Proof Pipeline Actions
   startZKProofPipeline: (playId, isOffside, verifyTxFn, onSuccessCallback) => {

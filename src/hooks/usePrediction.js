@@ -67,14 +67,15 @@ export const usePrediction = () => {
     userPoolBets,
     disputes,
     userDisputeVotes,
+    contractOwner,
     setPredictionPools,
     setDisputes,
     setUserPoolBets,
-    setUserDisputeVotes
+    setUserDisputeVotes,
+    setContractOwner
   } = useAppStore();
 
   const [loading, setLoading] = useState(false);
-  const [contractOwner, setContractOwner] = useState(null);
   const config = useConfig();
   const { address, chainId, isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -125,7 +126,7 @@ export const usePrediction = () => {
     return () => {
       cancelled = true;
     };
-  }, [fetchContractOwner]);
+  }, [fetchContractOwner, setContractOwner]);
 
   const fetchUserPoolBets = useCallback(async (poolIds) => {
     if (!address || poolIds.length === 0) {

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useAppStore } from '../store/useAppStore';
 import { PlusCircle, Wrench, Clock, HelpCircle, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export const AdminPanel = () => {
   const { createPoolAndDispute, loading, contractOwner } = usePrediction();
-  const { userAddress, walletConnected, addNotification, predictionPools, disputes, setPredictionPools, setDisputes } = useAppStore();
+  const { userAddress, walletConnected, addNotification, predictionPools, disputes } = useAppStore();
 
   const [playId, setPlayId] = useState('103');
   const [poolId, setPoolId] = useState('3');
@@ -14,8 +14,10 @@ export const AdminPanel = () => {
   const [duration, setDuration] = useState('86400'); // Default 1 day
 
   // Check if current user is owner
-  const isOwner = walletConnected && contractOwner && userAddress.toLowerCase() === contractOwner.toLowerCase();
+  const ownerLoaded = Boolean(contractOwner);
+  const isOwner = walletConnected && ownerLoaded && userAddress?.toLowerCase() === contractOwner?.toLowerCase();
   const canAccess = isOwner;
+  const isCheckingOwner = walletConnected && !ownerLoaded;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,11 +74,15 @@ export const AdminPanel = () => {
         <div className="bg-[#1C120C] border border-[#FF9F0A]/20 p-4 rounded-lg flex items-start gap-3">
           <ShieldAlert className="text-[#FF9F0A] shrink-0" size={18} />
           <div className="font-mono text-xs flex flex-col gap-1.5">
-            <span className="text-[#FF9F0A] font-bold">ACCESS RESTRICTED // OWNER ONLY</span>
+            <span className="text-[#FF9F0A] font-bold">
+              {isCheckingOwner ? 'CHECKING OWNER ACCESS...' : 'ACCESS RESTRICTED // OWNER ONLY'}
+            </span>
             <p className="text-zinc-400">
-              {!walletConnected 
-                ? "Please connect your Web3 wallet. Only the contract owner address is permitted to deploy new prediction pools."
-                : `Only the contract owner address is permitted to deploy new prediction pools. Connected address: ${userAddress}`}
+              {!walletConnected
+                ? 'Please connect your Web3 wallet. Only the contract owner address is permitted to deploy new prediction pools.'
+                : isCheckingOwner
+                  ? `Connected address: ${userAddress}. Reading the PredictionPool owner from X Layer...`
+                  : `Only the contract owner address is permitted to deploy new prediction pools. Connected address: ${userAddress}. Contract owner: ${contractOwner || 'not loaded'}`}
             </p>
           </div>
         </div>
