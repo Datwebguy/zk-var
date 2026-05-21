@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="ZK-VAR social icon">
+  <rect width="1024" height="1024" rx="192" fill="#1B1D0E"/>
+  <rect x="128" y="128" width="768" height="768" rx="112" fill="#A8FF35"/>
+  <path d="M320 288h284v108L466 628h138v108H320V628l138-232H320z" fill="#101208"/>
+  <path d="M650 288h112v226L650 646z" fill="#101208"/>
+  <path d="M650 736V646l128 90z" fill="#101208"/>
+  <path d="M762 514H650l112-226z" fill="#101208" opacity=".72"/>
+  <path d="M64 64h160M64 64v160M960 64H800M960 64v160M64 960h160M64 960V800M960 960H800M960 960V800" stroke="#A8FF35" stroke-width="24" stroke-linecap="square" opacity=".55"/>
+</svg>
