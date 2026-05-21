@@ -4,7 +4,7 @@ import { useWallet } from '../hooks/useWallet';
 import { TrendingUp, HelpCircle, AlertCircle, Coins } from 'lucide-react';
 
 export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
-  const { predictionPools, placePrediction, loading } = usePrediction();
+  const { predictionPools, placePrediction, claimPayout, claimRefund, loading } = usePrediction();
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
   const [selectedPoolId, setSelectedPoolId] = useState(1);
@@ -16,6 +16,10 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const poolStakedOutcome1 = selectedPool ? parseFloat(selectedPool.stakedOutcome1) || 0 : 0;
   const poolStakedOutcome2 = selectedPool ? parseFloat(selectedPool.stakedOutcome2) || 0 : 0;
   const poolTotal = selectedPool ? parseFloat(selectedPool.totalStaked) || 0 : 0;
+  const selectedPoolIsOpen = selectedPool?.status === 0;
+  const selectedPoolIsResolved = selectedPool?.status === 2;
+  const selectedPoolIsCancelled = selectedPool?.status === 3;
+  const selectedPoolCanRefund = selectedPoolIsCancelled || (selectedPoolIsResolved && (poolStakedOutcome1 === 0 || poolStakedOutcome2 === 0));
   
   const userStake = parseFloat(stakeAmount) || 0.0;
   const newTotal = poolTotal + userStake;
@@ -45,6 +49,22 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
     await placePrediction(selectedPoolId, selectedOutcome, userStake);
   };
 
+  const handleClaimPayout = async (poolId = selectedPoolId) => {
+    if (!walletConnected) {
+      await connectWallet('metamask');
+      return;
+    }
+    await claimPayout(poolId);
+  };
+
+  const handleClaimRefund = async (poolId = selectedPoolId) => {
+    if (!walletConnected) {
+      await connectWallet('metamask');
+      return;
+    }
+    await claimRefund(poolId);
+  };
+
   return (
     <div className="prediction-board-layout">
       
@@ -70,6 +90,11 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               const totalStakedVal = parseFloat(pool.totalStaked) || 0;
               const staked1Val = parseFloat(pool.stakedOutcome1) || 0;
               const staked2Val = parseFloat(pool.stakedOutcome2) || 0;
+              const isPoolOpen = pool.status === 0;
+              const isPoolResolved = pool.status === 2;
+              const isPoolCancelled = pool.status === 3;
+              const canRefundPool = isPoolCancelled || (isPoolResolved && (staked1Val === 0 || staked2Val === 0));
+              const statusLabel = isPoolOpen ? 'OPEN' : isPoolCancelled ? 'CANCELLED' : isPoolResolved ? 'RESOLVED' : 'CLOSED';
 
               const pctOutcome1 = totalStakedVal > 0 
                 ? ((staked1Val / totalStakedVal) * 100).toFixed(0) 
@@ -105,8 +130,8 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                         {pool.question}
                       </h4>
                     </div>
-                    <span className={`status-badge ${pool.status === 0 ? 'active' : 'resolved'}`}>
-                      {pool.status === 0 ? 'OPEN' : 'RESOLVED'}
+                    <span className={`status-badge ${isPoolOpen ? 'active' : 'resolved'}`}>
+                      {statusLabel}
                     </span>
                   </div>
 
@@ -150,26 +175,51 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                     <div className="flex flex-col gap-0.5">
                       <span>POOL ID: #{pool.poolId}</span>
                       <span className="text-white font-bold tabular-nums">TOTAL POOL: {pool.totalStaked} OKB</span>
+                      {isPoolResolved && (
+                        <span className="text-[#A8FF35] font-bold">WINNER: OUTCOME #{pool.winningOutcome}</span>
+                      )}
                     </div>
                     
-                    <button
-                      className={isActive ? 'btn-active-state' : 'btn-inactive-state'}
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        borderRadius: '6px',
-                        padding: '6px 14px',
-                        cursor: 'pointer',
-                        borderWidth: '1px'
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectPlay(pool.disputeId);
-                        setSelectedPoolId(pool.poolId);
-                      }}
-                    >
-                      OPEN
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {!isPoolOpen && (
+                        <button
+                          className="btn-inactive-state"
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            borderRadius: '6px',
+                            padding: '6px 10px',
+                            cursor: 'pointer',
+                            borderWidth: '1px'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            canRefundPool ? handleClaimRefund(pool.poolId) : handleClaimPayout(pool.poolId);
+                          }}
+                        >
+                          {canRefundPool ? 'REFUND' : 'CLAIM'}
+                        </button>
+                      )}
+
+                      <button
+                        className={isActive ? 'btn-active-state' : 'btn-inactive-state'}
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: '700',
+                          borderRadius: '6px',
+                          padding: '6px 14px',
+                          cursor: 'pointer',
+                          borderWidth: '1px'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectPlay(pool.disputeId);
+                          setSelectedPoolId(pool.poolId);
+                        }}
+                      >
+                        OPEN
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -204,33 +254,80 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               <span className="text-white font-bold line-clamp-1">{selectedPool.question}</span>
             </div>
 
-            {/* Outcome Choice togglers */}
-            <div className="flex flex-col gap-2">
-              <label className="hud-label"><HelpCircle size={14} /> Predict Outcome</label>
-              <div className="flex gap-2">
+            {!selectedPoolIsOpen ? (
+              <div className="flex flex-col gap-4">
+                <div className="border border-zinc-800 rounded-lg p-4 bg-black/60 font-mono text-3xs flex flex-col gap-2">
+                  <div className="flex justify-between text-zinc-500">
+                    <span>MARKET STATUS:</span>
+                    <span className="text-[#A8FF35] font-bold">
+                      {selectedPoolIsCancelled ? 'CANCELLED' : selectedPoolIsResolved ? 'RESOLVED' : 'CLOSED'}
+                    </span>
+                  </div>
+                  {selectedPoolIsResolved && (
+                    <div className="flex justify-between text-zinc-500">
+                      <span>WINNING OUTCOME:</span>
+                      <span className="text-white font-bold">#{selectedPool.winningOutcome}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-zinc-500">
+                    <span>TOTAL POOL:</span>
+                    <span className="text-white font-bold">{selectedPool.totalStaked} OKB</span>
+                  </div>
+                  <div className="h-px bg-zinc-800 my-1" />
+                  <div className="flex items-start gap-1 text-zinc-500 leading-normal">
+                    <AlertCircle size={10} className="text-[#00F5FF] shrink-0 mt-0.5" />
+                    <span>
+                      {selectedPoolCanRefund
+                        ? 'This market is refundable. Users with a stake in this pool can claim their original stake back.'
+                        : 'If your prediction matched the winning outcome, claim your proportional payout from this market.'}
+                    </span>
+                  </div>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => setSelectedOutcome(1)}
-                  className={`jury-vote-btn ${selectedOutcome === 1 ? 'active' : ''}`}
-                  style={{ padding: '10px 12px' }}
+                  onClick={() => selectedPoolCanRefund ? handleClaimRefund() : handleClaimPayout()}
+                  disabled={loading}
+                  className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="text-xs font-bold">YES / OFFSIDE</span>
-                  <span className="text-3xs font-mono opacity-80 mt-0.5">Pay: 1 : 1.45</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedOutcome(2)}
-                  className={`jury-vote-btn ${selectedOutcome === 2 ? 'active' : ''}`}
-                  style={{ padding: '10px 12px' }}
-                >
-                  <span className="text-xs font-bold">NO / ONSIDE</span>
-                  <span className="text-3xs font-mono opacity-80 mt-0.5">Pay: 1 : 2.80</span>
+                  {loading
+                    ? 'CLAIMING...'
+                    : !walletConnected
+                      ? 'CONNECT WALLET TO CLAIM'
+                      : selectedPoolCanRefund
+                        ? 'CLAIM REFUND'
+                        : 'CLAIM PAYOUT'
+                  }
                 </button>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Outcome Choice togglers */}
+                <div className="flex flex-col gap-2">
+                  <label className="hud-label"><HelpCircle size={14} /> Predict Outcome</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOutcome(1)}
+                      className={`jury-vote-btn ${selectedOutcome === 1 ? 'active' : ''}`}
+                      style={{ padding: '10px 12px' }}
+                    >
+                      <span className="text-xs font-bold">YES / OFFSIDE</span>
+                      <span className="text-3xs font-mono opacity-80 mt-0.5">Pay: 1 : 1.45</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOutcome(2)}
+                      className={`jury-vote-btn ${selectedOutcome === 2 ? 'active' : ''}`}
+                      style={{ padding: '10px 12px' }}
+                    >
+                      <span className="text-xs font-bold">NO / ONSIDE</span>
+                      <span className="text-3xs font-mono opacity-80 mt-0.5">Pay: 1 : 2.80</span>
+                    </button>
+                  </div>
+                </div>
 
-            {/* Preset Stake slider */}
-            <div className="flex flex-col gap-1.5">
+                {/* Preset Stake slider */}
+                <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
                 <label className="hud-label"><Coins size={14} /> Stake Amount</label>
                 <span className="text-xs font-mono text-[#A8FF35] tabular-nums font-bold">{stakeAmount} OKB</span>
@@ -257,10 +354,10 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                   </span>
                 </div>
               )}
-            </div>
+                </div>
 
-            {/* Real-time Pre-Transaction Telemetry HUD */}
-            <div className="border border-zinc-800 rounded-lg p-3 bg-black/60 font-mono text-3xs flex flex-col gap-2">
+                {/* Real-time Pre-Transaction Telemetry HUD */}
+                <div className="border border-zinc-800 rounded-lg p-3 bg-black/60 font-mono text-3xs flex flex-col gap-2">
               <div className="flex justify-between text-zinc-500">
                 <span>ESTIMATED GAS:</span>
                 <span className="text-white tabular-nums">0.00014 OKB</span>
@@ -274,25 +371,27 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                 <AlertCircle size={10} className="text-[#00F5FF] shrink-0 mt-0.5" />
                 <span>Yield shifts dynamically based on overall pool weights at resolution time.</span>
               </div>
-            </div>
+                </div>
 
-            {/* Place transaction button */}
-            <button
-              onClick={handleSubmitPrediction}
-              disabled={loading || balanceLoading || isInsufficientBalance}
-              className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading 
-                ? 'BROADCASTING...' 
-                : !walletConnected
-                  ? 'CONNECT WALLET TO PLACE'
-                  : balanceLoading
-                    ? 'CHECKING OKB BALANCE...'
-                  : isInsufficientBalance 
-                    ? 'INSUFFICIENT OKB BALANCE' 
-                    : 'SUBMIT PREDICTION'
-              }
-            </button>
+                {/* Place transaction button */}
+                <button
+                  onClick={handleSubmitPrediction}
+                  disabled={loading || balanceLoading || isInsufficientBalance}
+                  className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading 
+                    ? 'BROADCASTING...' 
+                    : !walletConnected
+                      ? 'CONNECT WALLET TO PLACE'
+                      : balanceLoading
+                        ? 'CHECKING OKB BALANCE...'
+                      : isInsufficientBalance 
+                        ? 'INSUFFICIENT OKB BALANCE' 
+                        : 'SUBMIT PREDICTION'
+                  }
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

@@ -350,6 +350,22 @@ export const usePrediction = () => {
     })
   ), [fetchPredictionPools, handleContractTx]);
 
+  const claimRefund = useCallback(async (poolId) => (
+    await handleContractTx({
+      contractType: 'PredictionPool',
+      method: 'claimRefund',
+      args: [poolId],
+      pendingMsg: `Claiming refund for pool ${poolId}...`,
+      successMsg: 'Refund claimed successfully!',
+      history: {
+        type: 'Refund',
+        label: `Claimed refund for Pool #${poolId}`,
+        target: `Pool #${poolId}`
+      },
+      onSuccess: () => fetchPredictionPools(true)
+    })
+  ), [fetchPredictionPools, handleContractTx]);
+
   const claimJuryRewards = useCallback(async (playId) => (
     await handleContractTx({
       contractType: 'DisputeRegistry',
@@ -398,6 +414,7 @@ export const usePrediction = () => {
     placePrediction,
     castJuryVote,
     claimPayout,
+    claimRefund,
     claimJuryRewards,
     createPoolAndDispute
   };
