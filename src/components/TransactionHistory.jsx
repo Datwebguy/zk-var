@@ -134,6 +134,10 @@ export const TransactionHistory = () => {
           )}
         </div>
 
+        <div className="border border-zinc-800 bg-black/40 rounded-lg px-3 py-2 text-3xs font-mono text-zinc-500 leading-relaxed">
+          ZK-VAR displays native values as OKB. If the external X Layer explorer shows a huge amount, it is rendering raw wei; for example, 150000000000000000 wei equals 0.15 OKB.
+        </div>
+
         {error && (
           <div className="border border-[#FF453A]/40 bg-[#FF453A]/10 rounded-lg px-3 py-2 text-3xs font-mono text-[#FF453A]">
             {error}
