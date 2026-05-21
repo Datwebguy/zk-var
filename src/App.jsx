@@ -9,6 +9,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { TransactionHistory } from './components/TransactionHistory';
 import { ClaimCenter } from './components/ClaimCenter';
 import { usePrediction } from './hooks/usePrediction';
+import { useAppStore } from './store/useAppStore';
 import {
   Activity,
   BookOpen,
@@ -31,6 +32,13 @@ function App() {
   const [activePlayId, setActivePlayId] = useState(101);
   const [activePage, setActivePage] = useState('home');
   const { fetchPredictionPools, fetchDisputes } = usePrediction();
+  const { userAddress, walletConnected, contractOwner } = useAppStore();
+  const isContractOwner = Boolean(
+    walletConnected &&
+    userAddress &&
+    contractOwner &&
+    userAddress.toLowerCase() === contractOwner.toLowerCase()
+  );
 
   const navItems = [
     { id: 'home', label: 'Home', icon: Home },
@@ -38,8 +46,10 @@ function App() {
     { id: 'tribunal', label: 'Tribunal', icon: ShieldCheck },
     { id: 'prover', label: 'ZK Prover', icon: Cpu },
     { id: 'history', label: 'History', icon: History },
-    { id: 'admin', label: 'Admin', icon: Wrench }
+    ...(isContractOwner ? [{ id: 'admin', label: 'Admin', icon: Wrench }] : [])
   ];
+
+  const visiblePage = activePage === 'admin' && !isContractOwner ? 'home' : activePage;
 
   useEffect(() => {
     fetchPredictionPools();
@@ -105,7 +115,7 @@ function App() {
             key={id}
             type="button"
             onClick={() => setActivePage(id)}
-            className={`page-nav-btn ${activePage === id ? 'active' : ''}`}
+            className={`page-nav-btn ${visiblePage === id ? 'active' : ''}`}
           >
             <Icon size={14} />
             {label}
@@ -113,8 +123,8 @@ function App() {
         ))}
       </nav>
 
-      <main className={activePage === 'home' ? 'landing-page' : 'page-shell'}>
-        {activePage === 'home' && (
+      <main className={visiblePage === 'home' ? 'landing-page' : 'page-shell'}>
+        {visiblePage === 'home' && (
           <>
             <section className="landing-hero">
               <div className="landing-copy">
@@ -185,7 +195,7 @@ function App() {
           </>
         )}
 
-        {activePage === 'markets' && (
+        {visiblePage === 'markets' && (
           <>
             <div className="page-heading">
               <h2 className="section-title"><LineChart size={16} /> Prediction Markets</h2>
@@ -198,7 +208,7 @@ function App() {
           </>
         )}
 
-        {activePage === 'tribunal' && (
+        {visiblePage === 'tribunal' && (
           <>
             <div className="glass-panel warning-banner">
               <ShieldAlert className="text-[#FFD60A] shrink-0" size={18} />
@@ -229,7 +239,7 @@ function App() {
           </>
         )}
 
-        {activePage === 'prover' && (
+        {visiblePage === 'prover' && (
           <section className="single-page-panel">
             <h2 className="section-title">
               <Cpu size={14} className="text-[#A8FF35]" /> ZK Prover Proof Pipeline
@@ -238,7 +248,7 @@ function App() {
           </section>
         )}
 
-        {activePage === 'history' && (
+        {visiblePage === 'history' && (
           <>
             <div className="page-heading">
               <h2 className="section-title"><History size={16} /> Wallet Activity</h2>
@@ -249,7 +259,7 @@ function App() {
           </>
         )}
 
-        {activePage === 'admin' && (
+        {visiblePage === 'admin' && (
           <section className="single-page-panel">
             <AdminPanel />
           </section>

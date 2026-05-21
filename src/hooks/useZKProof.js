@@ -15,6 +15,8 @@ export const useZKProof = () => {
     resetZKProofPipeline,
     walletConnected,
     walletType,
+    userAddress,
+    contractOwner,
     addNotification
   } = useAppStore();
 
@@ -25,6 +27,17 @@ export const useZKProof = () => {
 
     if (!walletConnected) {
       addNotification('error', 'Please connect MetaMask or another injected wallet to verify ZK proofs on-chain.');
+      return;
+    }
+
+    const isContractOwner = Boolean(
+      userAddress &&
+      contractOwner &&
+      userAddress.toLowerCase() === contractOwner.toLowerCase()
+    );
+
+    if (!isContractOwner) {
+      addNotification('error', 'Only the contract owner can trigger ZK market resolution from this app.');
       return;
     }
 
@@ -71,7 +84,7 @@ export const useZKProof = () => {
     };
 
     startZKProofPipeline(playId, isOffside, verifyTxFn);
-  }, [isZKProving, walletConnected, walletType, startZKProofPipeline, addNotification]);
+  }, [isZKProving, walletConnected, userAddress, contractOwner, walletType, startZKProofPipeline, addNotification]);
 
   return {
     isZKProving,

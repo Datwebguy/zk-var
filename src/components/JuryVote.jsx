@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useZKProof } from '../hooks/useZKProof';
 import { useWallet } from '../hooks/useWallet';
+import { useAppStore } from '../store/useAppStore';
 import { Shield, Sparkles, Scale, Info, HelpCircle } from 'lucide-react';
 
 export const JuryVote = ({ activePlayId = 101 }) => {
   const { disputes, userDisputeVotes, castJuryVote, claimJuryRewards, loading } = usePrediction();
   const { generateAndVerifyProof, isZKProving, txLoading } = useZKProof();
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
+  const { userAddress, contractOwner } = useAppStore();
 
   const [voteChoice, setVoteChoice] = useState(1); // Default to Choice 1: Valid
   const [stakeAmount, setStakeAmount] = useState('0.25'); // Default stake of 0.25 OKB
@@ -22,6 +24,12 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   const userStake = parseFloat(stakeAmount) || 0.0;
   const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
   const isInsufficientBalance = walletConnected && balanceReady && (userStake > userBalance);
+  const isContractOwner = Boolean(
+    walletConnected &&
+    userAddress &&
+    contractOwner &&
+    userAddress.toLowerCase() === contractOwner.toLowerCase()
+  );
 
   const handleCastVote = async () => {
     if (!walletConnected) {
@@ -244,7 +252,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
         </div>
 
         {/* Dynamic SP1 pipeline launcher */}
-        {!isClosed ? (
+        {!isClosed && isContractOwner ? (
           <div className="flex flex-col gap-2">
             <button
               onClick={handleTriggerZK}
@@ -257,6 +265,13 @@ export const JuryVote = ({ activePlayId = 101 }) => {
             </button>
             <span className="text-3xs text-zinc-600 text-center leading-normal">
               Compiles ZK-VM guest program, performs proof inference, and verifies on-chain.
+            </span>
+          </div>
+        ) : !isClosed ? (
+          <div className="bg-[#121214]/60 border border-zinc-800 rounded-lg p-4 flex flex-col gap-2 text-3xs text-zinc-500">
+            <span className="text-[#00F5FF] font-bold block mb-1">ZK REFEREE LOCKED</span>
+            <span>
+              Market resolution is restricted to the protocol owner/oracle account. Fans can stake predictions and cast jury votes, but cannot close the market.
             </span>
           </div>
         ) : (
