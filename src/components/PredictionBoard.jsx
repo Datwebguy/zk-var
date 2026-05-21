@@ -4,7 +4,7 @@ import { useWallet } from '../hooks/useWallet';
 import { TrendingUp, HelpCircle, AlertCircle, Coins } from 'lucide-react';
 
 export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
-  const { predictionPools, placePrediction, claimPayout, claimRefund, loading } = usePrediction();
+  const { predictionPools, userPoolBets, placePrediction, claimPayout, claimRefund, loading } = usePrediction();
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
   const [selectedPoolId, setSelectedPoolId] = useState(1);
@@ -20,6 +20,10 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const selectedPoolIsResolved = selectedPool?.status === 2;
   const selectedPoolIsCancelled = selectedPool?.status === 3;
   const selectedPoolCanRefund = selectedPoolIsCancelled || (selectedPoolIsResolved && (poolStakedOutcome1 === 0 || poolStakedOutcome2 === 0));
+  const selectedUserBet = selectedPool ? userPoolBets[selectedPool.poolId] : null;
+  const selectedUserStake = parseFloat(selectedUserBet?.amount || '0') || 0;
+  const selectedUserHasStake = selectedUserStake > 0;
+  const selectedUserClaimed = Boolean(selectedUserBet?.claimed);
   
   const userStake = parseFloat(stakeAmount) || 0.0;
   const newTotal = poolTotal + userStake;
@@ -27,17 +31,14 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
   const isInsufficientBalance = walletConnected && balanceReady && (userStake > userBalance);
 
-  // Dynamic payout calculations
-  let calculatedPayout = '0.00';
-  if (selectedPool && userStake > 0) {
-    if (selectedOutcome === 1) {
-      const winningPool = poolStakedOutcome1 + userStake;
-      calculatedPayout = ((userStake / winningPool) * newTotal).toFixed(2);
-    } else {
-      const winningPool = poolStakedOutcome2 + userStake;
-      calculatedPayout = ((userStake / winningPool) * newTotal).toFixed(2);
-    }
-  }
+  const estimateReturn = (outcome) => {
+    if (!selectedPool || userStake <= 0) return '0.00';
+    const winningPool = outcome === 1 ? poolStakedOutcome1 + userStake : poolStakedOutcome2 + userStake;
+    if (winningPool <= 0) return '0.00';
+    return ((userStake / winningPool) * newTotal).toFixed(2);
+  };
+
+  const calculatedPayout = estimateReturn(selectedOutcome);
 
   // Handle betting prediction submission
   const handleSubmitPrediction = async () => {
@@ -95,6 +96,10 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               const isPoolCancelled = pool.status === 3;
               const canRefundPool = isPoolCancelled || (isPoolResolved && (staked1Val === 0 || staked2Val === 0));
               const statusLabel = isPoolOpen ? 'OPEN' : isPoolCancelled ? 'CANCELLED' : isPoolResolved ? 'RESOLVED' : 'CLOSED';
+              const poolUserBet = userPoolBets[pool.poolId];
+              const poolUserStake = parseFloat(poolUserBet?.amount || '0') || 0;
+              const poolUserHasStake = poolUserStake > 0;
+              const poolUserClaimed = Boolean(poolUserBet?.claimed);
 
               const pctOutcome1 = totalStakedVal > 0 
                 ? ((staked1Val / totalStakedVal) * 100).toFixed(0) 
@@ -178,26 +183,34 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       {isPoolResolved && (
                         <span className="text-[#A8FF35] font-bold">WINNER: OUTCOME #{pool.winningOutcome}</span>
                       )}
+                      {poolUserHasStake && (
+                        <span className={poolUserClaimed ? 'text-zinc-500 font-bold' : 'text-[#00F5FF] font-bold'}>
+                          YOUR STAKE: {poolUserStake.toFixed(2)} OKB {poolUserClaimed && '(CLAIMED)'}
+                        </span>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-2">
                       {!isPoolOpen && (
                         <button
                           className="btn-inactive-state"
+                          disabled={poolUserClaimed || !poolUserHasStake}
                           style={{
                             fontSize: '10px',
                             fontWeight: '700',
                             borderRadius: '6px',
                             padding: '6px 10px',
-                            cursor: 'pointer',
+                            cursor: poolUserClaimed || !poolUserHasStake ? 'not-allowed' : 'pointer',
+                            opacity: poolUserClaimed || !poolUserHasStake ? 0.5 : 1,
                             borderWidth: '1px'
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (poolUserClaimed || !poolUserHasStake) return;
                             canRefundPool ? handleClaimRefund(pool.poolId) : handleClaimPayout(pool.poolId);
                           }}
                         >
-                          {canRefundPool ? 'REFUND' : 'CLAIM'}
+                          {poolUserClaimed ? 'CLAIMED' : !poolUserHasStake ? 'NO STAKE' : canRefundPool ? 'REFUND' : 'CLAIM'}
                         </button>
                       )}
 
@@ -273,11 +286,31 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                     <span>TOTAL POOL:</span>
                     <span className="text-white font-bold">{selectedPool.totalStaked} OKB</span>
                   </div>
+                  {walletConnected && (
+                    <>
+                      <div className="flex justify-between text-zinc-500">
+                        <span>YOUR STAKE:</span>
+                        <span className="text-white font-bold">
+                          {selectedUserHasStake ? `${selectedUserStake.toFixed(2)} OKB` : '0.00 OKB'}
+                        </span>
+                      </div>
+                      {selectedUserHasStake && (
+                        <div className="flex justify-between text-zinc-500">
+                          <span>YOUR STATUS:</span>
+                          <span className={selectedUserClaimed ? 'text-zinc-400 font-bold' : 'text-[#00F5FF] font-bold'}>
+                            {selectedUserClaimed ? 'CLAIMED' : 'READY'}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
                   <div className="h-px bg-zinc-800 my-1" />
                   <div className="flex items-start gap-1 text-zinc-500 leading-normal">
                     <AlertCircle size={10} className="text-[#00F5FF] shrink-0 mt-0.5" />
                     <span>
-                      {selectedPoolCanRefund
+                      {selectedUserClaimed
+                        ? 'Your stake for this pool has already been claimed or refunded on-chain.'
+                        : selectedPoolCanRefund
                         ? 'This market is refundable. Users with a stake in this pool can claim their original stake back.'
                         : 'If your prediction matched the winning outcome, claim your proportional payout from this market.'}
                     </span>
@@ -286,13 +319,17 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
 
                 <button
                   onClick={() => selectedPoolCanRefund ? handleClaimRefund() : handleClaimPayout()}
-                  disabled={loading}
+                  disabled={loading || (walletConnected && (!selectedUserHasStake || selectedUserClaimed))}
                   className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading
                     ? 'CLAIMING...'
                     : !walletConnected
                       ? 'CONNECT WALLET TO CLAIM'
+                      : selectedUserClaimed
+                        ? 'ALREADY CLAIMED'
+                      : !selectedUserHasStake
+                        ? 'NO STAKE IN THIS POOL'
                       : selectedPoolCanRefund
                         ? 'CLAIM REFUND'
                         : 'CLAIM PAYOUT'
@@ -312,7 +349,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       style={{ padding: '10px 12px' }}
                     >
                       <span className="text-xs font-bold">YES / OFFSIDE</span>
-                      <span className="text-3xs font-mono opacity-80 mt-0.5">Pay: 1 : 1.45</span>
+                      <span className="text-3xs font-mono opacity-80 mt-0.5">Est return: {estimateReturn(1)} OKB</span>
                     </button>
                     <button
                       type="button"
@@ -321,7 +358,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       style={{ padding: '10px 12px' }}
                     >
                       <span className="text-xs font-bold">NO / ONSIDE</span>
-                      <span className="text-3xs font-mono opacity-80 mt-0.5">Pay: 1 : 2.80</span>
+                      <span className="text-3xs font-mono opacity-80 mt-0.5">Est return: {estimateReturn(2)} OKB</span>
                     </button>
                   </div>
                 </div>

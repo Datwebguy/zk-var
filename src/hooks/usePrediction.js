@@ -71,6 +71,7 @@ export const usePrediction = () => {
 
   const [loading, setLoading] = useState(false);
   const [contractOwner, setContractOwner] = useState(null);
+  const [userPoolBets, setUserPoolBets] = useState({});
   const config = useConfig();
   const { address, chainId, isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -123,10 +124,37 @@ export const usePrediction = () => {
     };
   }, [fetchContractOwner]);
 
+  const fetchUserPoolBets = useCallback(async (poolIds) => {
+    if (!address || poolIds.length === 0) {
+      setUserPoolBets({});
+      return;
+    }
+
+    try {
+      const contract = await getContract('PredictionPool');
+      const entries = await Promise.all(poolIds.map(async (poolId) => {
+        const bet = await contract.bets(poolId, address);
+        return [
+          poolId,
+          {
+            outcome: Number(bet[0]),
+            amount: formatEtherVal(bet[1]),
+            claimed: Boolean(bet[2])
+          }
+        ];
+      }));
+
+      setUserPoolBets(Object.fromEntries(entries));
+    } catch (error) {
+      logRpcError('USER POOL BETS FETCH FAILED', error);
+    }
+  }, [address, getContract]);
+
   const fetchPredictionPools = useCallback(async (force = false) => {
     const now = Date.now();
     if (!force && cache.pools && (now - cache.lastFetchedPools < STALE_TIME)) {
       setPredictionPools(cache.pools);
+      await fetchUserPoolBets(cache.pools.map((pool) => pool.poolId));
       return;
     }
 
@@ -165,13 +193,14 @@ export const usePrediction = () => {
       cache.pools = activePools;
       cache.lastFetchedPools = now;
       setPredictionPools(activePools);
+      await fetchUserPoolBets(activePools.map((pool) => pool.poolId));
     } catch (error) {
       logRpcError('PREDICTION POOLS FETCH FAILED', error);
       rotateRpcUrl();
     } finally {
       setLoading(false);
     }
-  }, [getContract, setPredictionPools]);
+  }, [fetchUserPoolBets, getContract, setPredictionPools]);
 
   const fetchDisputes = useCallback(async (force = false) => {
     const now = Date.now();
@@ -407,6 +436,7 @@ export const usePrediction = () => {
   return {
     loading,
     predictionPools,
+    userPoolBets,
     disputes,
     contractOwner,
     fetchPredictionPools,
