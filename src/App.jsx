@@ -44,12 +44,11 @@ function App() {
       <header className="header-bar">
         {/* Left: Brand logo & subtitle */}
         <div className="header-left">
-          <h1 className="header-logo">
-            ZK-VAR
-          </h1>
-          <span className="header-subtitle">
-            Sovereign Referee Arena
-          </span>
+          <img
+            src="/zk-var-logo.svg"
+            alt="ZK-VAR Sovereign Referee Arena"
+            className="header-brand-logo"
+          />
         </div>
 
         {/* Center: Live status ticker */}

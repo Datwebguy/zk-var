@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" role="img" aria-label="ZK-VAR Sovereign Referee Arena">
+  <rect width="420" height="96" fill="none"/>
+  <g filter="url(#glow)">
+    <rect x="8" y="8" width="80" height="80" rx="16" fill="#1B1D0E"/>
+    <rect x="18" y="18" width="60" height="60" rx="9" fill="#A8FF35"/>
+    <path d="M32 30h23v9L44 57h11v9H32v-9l11-18H32z" fill="#101208"/>
+    <path d="M59 30h8v14l-8 9z" fill="#101208"/>
+    <path d="M59 66V53l10 13z" fill="#101208"/>
+    <path d="M67 44h-8l8-14z" fill="#101208" opacity=".72"/>
+  </g>
+  <g>
+    <text x="110" y="45" fill="#A8FF35" font-family="Arial Black, Impact, sans-serif" font-size="34" font-weight="900" letter-spacing="2">ZK-VAR</text>
+    <text x="112" y="68" fill="#00F5FF" font-family="Consolas, 'Courier New', monospace" font-size="12" font-weight="700" letter-spacing="5">SOVEREIGN REFEREE ARENA</text>
+    <path d="M110 76h250" stroke="#A8FF35" stroke-width="1" opacity=".35"/>
+    <path d="M382 20h24v24M382 76h24V52" stroke="#A8FF35" stroke-width="3" fill="none" opacity=".85"/>
+  </g>
+  <defs>
+    <filter id="glow" x="-10" y="-10" width="116" height="116" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
