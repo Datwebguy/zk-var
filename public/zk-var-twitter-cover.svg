@@ -51,7 +51,7 @@
   <g font-family="Consolas, 'Courier New', monospace" font-size="18" font-weight="700">
     <rect x="860" y="96" width="448" height="64" rx="10" fill="#0A0A0B" stroke="#A8FF35" stroke-opacity=".45"/>
     <text x="890" y="136" fill="#A8FF35">X LAYER L2</text>
-    <text x="1035" y="136" fill="#00F5FF">OKB TESTNET</text>
+    <text x="1035" y="136" fill="#00F5FF">ON-CHAIN MARKETS</text>
 
     <rect x="860" y="184" width="448" height="64" rx="10" fill="#0A0A0B" stroke="#00F5FF" stroke-opacity=".4"/>
     <text x="890" y="224" fill="#00F5FF">SP1 ZK-VM</text>
