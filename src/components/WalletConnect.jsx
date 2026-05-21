@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../store/useAppStore';
 import { Wallet, LogOut, X, CheckCircle, HelpCircle, Activity } from 'lucide-react';
@@ -65,33 +65,33 @@ export const WalletConnect = () => {
                     Connect your wallet to lock stakes, predict World Cup outcomes, and collect yield rewards on X Layer L2.
                   </p>
 
-                  {/* Primary OKX Connector Option */}
+                  {/* Primary wallet connector */}
                   <button
-                    onClick={() => handleConnect('okx')}
+                    onClick={() => handleConnect('metamask')}
                     className="wallet-hud-connector-btn primary-btn"
                   >
                     <div className="flex flex-col items-start">
                       <span className="wallet-hud-connector-label">
-                        OKX WALLET
+                        CONNECT WALLET
                       </span>
                       <span className="wallet-hud-connector-sub">
-                        Primary X Layer Connector
+                        Reown AppKit: MetaMask, WalletConnect, Coinbase, Rabby
                       </span>
                     </div>
                     <CheckCircle size={18} className="text-[#A8FF35] opacity-80" />
                   </button>
 
-                  {/* Secondary MetaMask Connector Option */}
+                  {/* Secondary OKX direct option */}
                   <button
-                    onClick={() => handleConnect('metamask')}
+                    onClick={() => handleConnect('okx')}
                     className="wallet-hud-connector-btn secondary-btn"
                   >
                     <div className="flex flex-col items-start">
                       <span className="wallet-hud-connector-label" style={{ color: '#00F5FF' }}>
-                        METAMASK / INJECTED
+                        OKX DIRECT
                       </span>
                       <span className="wallet-hud-connector-sub">
-                        Fallback Web3 Provider
+                        Optional injected wallet fallback
                       </span>
                     </div>
                     <HelpCircle size={18} className="text-[#00F5FF]" />

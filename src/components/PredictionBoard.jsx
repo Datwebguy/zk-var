@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useWallet } from '../hooks/useWallet';
 import { TrendingUp, HelpCircle, AlertCircle, Coins } from 'lucide-react';
@@ -38,7 +38,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   // Handle betting prediction submission
   const handleSubmitPrediction = async () => {
     if (!walletConnected) {
-      await connectWallet('okx');
+      await connectWallet('metamask');
       return;
     }
     if (!selectedPool || userStake <= 0 || isInsufficientBalance) return;
@@ -279,13 +279,13 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
             {/* Place transaction button */}
             <button
               onClick={handleSubmitPrediction}
-              disabled={loading || (walletConnected && isInsufficientBalance)}
+              disabled={loading || isInsufficientBalance}
               className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading 
                 ? 'BROADCASTING...' 
-                : !walletConnected 
-                  ? 'CONNECT TO PLACE' 
+                : !walletConnected
+                  ? 'CONNECT METAMASK TO PLACE'
                   : isInsufficientBalance 
                     ? 'INSUFFICIENT OKB BALANCE' 
                     : 'SUBMIT PREDICTION'

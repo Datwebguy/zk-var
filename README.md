@@ -34,7 +34,7 @@ All smart contracts are fully open-source, compiled, and deployed on the **X Lay
 flowchart TD
     subgraph Frontend [dApp Client]
         UI[Premium HUD Interface]
-        Wallet[OKX Wallet / MetaMask]
+        Wallet[Reown AppKit Wallets]
         ZKP[SP1 ZK-VM Proof Generator]
     end
 
@@ -72,10 +72,11 @@ Receives SP1 verification proofs.
 
 ---
 
-## ⚡ Key Technical Workarounds & Stability Details
+## ⚡ Wallet Transaction Model
 
-* **Legacy Gas Pricing Bypass:** Testnet RPC providers often return unstable EIP-1559 fee headers, causing injected wallets (such as MetaMask or OKX Wallet) to fail with internal JSON-RPC error `code: -32603`. ZK-VAR bypasses this by fetching `getFeeData()` and overriding the transaction configuration with a legacy `gasPrice` parameter. This forces wallets to sign transactions smoothly.
-* **30% Gas Limit Buffer:** A 30% gas calculation buffer (`(estimatedGas * 130n) / 100n`) is applied to all on-chain operations to accommodate Layer 2 execution variance.
+ZK-VAR uses real wallet-signed transactions through Reown AppKit + wagmi. Prediction stakes, jury votes, proof submissions, and claims are sent by the connected wallet, so the wallet address remains the on-chain `msg.sender` and native `OKB` is deducted from the actual user account.
+
+The connection modal supports MetaMask, WalletConnect mobile wallets, Coinbase Wallet, Rabby, and other injected wallets. MetaMask/WalletConnect are recommended for live demos on X Layer Testnet. OKX Wallet can connect, but its testnet pre-broadcast simulator may reject valid contract writes before showing a signature prompt.
 
 ---
 
@@ -96,8 +97,10 @@ npm install
 ### 3. Configure Local Environment
 Create a `.env` file in the root directory:
 ```env
-PRIVATE_KEY=your_private_key_here
-RPC_URL=https://testrpc.xlayer.tech/terigon
+PRIVATE_KEY=your_deployer_private_key_here
+RPC_URL=https://testrpc.xlayer.tech
+RPC_FALLBACK_URL=https://xlayertestrpc.okx.com
+VITE_REOWN_PROJECT_ID=your_reown_project_id_here
 ```
 *(The local `.env` is ignored by git to keep your private key secure.)*
 
@@ -120,7 +123,7 @@ forge test
 Follow these steps to experience the complete live on-chain lifecycle:
 
 ### Step 1: Connect your Wallet
-Open the dApp and connect your wallet (OKX Wallet or MetaMask) configured to **X Layer Testnet** (Chain ID: 195). Ensure you have some testnet `OKB` tokens.
+Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConnect are recommended for X Layer Testnet (Chain ID: 195). Ensure the connected wallet has testnet `OKB` tokens.
 
 ### Step 2: Place Predictions
 * Choose an active pool in the **Sovereign Referee Arena** (e.g. *Will the VAR check rule Messi's 42nd minute goal OFFSIDE?*).
@@ -148,7 +151,7 @@ Open the dApp and connect your wallet (OKX Wallet or MetaMask) configured to **X
 - [x] **Fully deployed on X Layer Testnet:** All contracts verified and working live.
 - [x] **No Mock Data:** The frontend reads strictly from on-chain contract events and states.
 - [x] **Zero-Knowledge integration:** Interactive SP1 proof verifications integrated.
-- [x] **OKX Wallet Integration:** Tested and optimized for OKX Wallet.
+- [x] **Wallet-Signed Transactions:** Frontend write actions are signed by the connected wallet, preserving user custody and correct on-chain sender state.
 
 ---
 

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useAccount, useConfig, useSwitchChain } from 'wagmi';
+import { waitForTransactionReceipt, writeContract } from 'wagmi/actions';
+import { parseAbi } from 'viem';
 import { useAppStore } from '../store/useAppStore';
 import { ethers } from 'ethers';
 import {
@@ -8,11 +11,9 @@ import {
   XLAYER_RPC_URLS,
   decodeContractError,
   formatEtherVal,
-  getInjectedProvider,
-  getWeb3Provider,
-  isEmptyWalletRpcError,
   logRpcError
 } from '../utils/contractHelpers';
+import { xLayerTestnet } from '../config/wagmi';
 
 let cache = {
   pools: null,
@@ -22,7 +23,6 @@ let cache = {
 };
 
 const STALE_TIME = 15000;
-const GAS_LIMIT_BUFFER_PERCENT = 130n;
 let activeRpcIndex = 0;
 
 const rotateRpcUrl = () => {
@@ -43,189 +43,23 @@ const getContractAbi = (contractType) => (
   contractType === 'PredictionPool' ? PREDICTION_POOL_ABI : DISPUTE_REGISTRY_ABI
 );
 
-const buildPredictionTxData = async ({ contract, from, poolId, outcome, value }) => ({
-  from,
-  to: await contract.getAddress(),
-  data: contract.interface.encodeFunctionData('placePrediction', [poolId, outcome]),
-  value
-});
-
-const validatePool = async ({ contract, poolId }) => {
-  console.log(`[PRE-FLIGHT] Querying Pool ${poolId} details...`);
-  const pool = await contract.pools(poolId);
-
-  if (!pool.exists) {
-    throw new Error(`Pre-flight failed: Pool ${poolId} does not exist on-chain.`);
-  }
-
-  if (Number(pool.status) !== 0) {
-    throw new Error(`Pre-flight failed: Pool ${poolId} is not Open (Current status: ${pool.status.toString()}).`);
-  }
-
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  if (nowInSeconds >= Number(pool.closingTime)) {
-    throw new Error(`Pre-flight failed: Pool ${poolId} is closed for predictions (closing time passed).`);
-  }
-
-  return pool;
+const WAGMI_ABIS = {
+  PredictionPool: parseAbi(PREDICTION_POOL_ABI),
+  DisputeRegistry: parseAbi(DISPUTE_REGISTRY_ABI)
 };
 
-const validatePredictionInput = ({ amount, value }) => {
+const ensurePositiveAmount = (amount) => {
+  const value = ethers.parseEther(amount.toString());
   if (value <= 0n) {
-    throw new Error(`Pre-flight failed: Bet amount must be greater than 0 OKB (Sending: ${amount} OKB).`);
+    throw new Error('Amount must be greater than 0 OKB.');
   }
+  return value;
 };
 
-const validateBalance = async ({ provider, userAddress, value, amount }) => {
-  const balance = await provider.getBalance(userAddress);
-  if (balance < value) {
-    throw new Error(`Insufficient OKB balance. Wallet has: ${ethers.formatEther(balance)} OKB, Need: ${amount} OKB.`);
-  }
-  return balance;
-};
-
-const validateExistingBet = async ({ contract, poolId, userAddress, outcome }) => {
-  const userBet = await contract.bets(poolId, userAddress);
-  if (userBet.amount > 0n && Number(userBet.outcome) !== Number(outcome)) {
-    throw new Error(`Pre-flight failed: Cannot change prediction outcome side (already bet on Outcome ${userBet.outcome.toString()}).`);
-  }
-  return userBet;
-};
-
-const simulateTransaction = async ({ provider, txData, contract }) => {
-  console.log("[SIMULATION] Simulating placePrediction via eth_call...");
-
-  try {
-    await provider.call(txData);
-    console.log("[SIMULATION] eth_call simulation succeeded! Transaction is safe to broadcast.");
-  } catch (error) {
-    logRpcError('SIMULATION FAILED', error);
-    throw new Error(`Simulation failed on-chain: ${decodeContractError(error, contract.interface)}`, { cause: error });
-  }
-};
-
-const estimatePredictionGas = async ({ contract, poolId, outcome, value }) => {
-  try {
-    const estimatedGas = await contract.placePrediction.estimateGas(poolId, outcome, { value });
-    const gasLimit = (estimatedGas * GAS_LIMIT_BUFFER_PERCENT) / 100n;
-    console.log(`[TRANSACTION] Estimated Gas: ${estimatedGas.toString()}. Buffered gasLimit: ${gasLimit.toString()}`);
-    return gasLimit;
-  } catch (error) {
-    logRpcError('GAS ESTIMATION FAILED', error);
-    return null;
-  }
-};
-
-const sendViaContract = async ({ contract, poolId, outcome, txOptions, label }) => {
-  console.log(`[TRANSACTION] ${label} payload:`, {
-    to: await contract.getAddress(),
-    method: 'placePrediction',
-    poolId,
-    outcome,
-    ...txOptions
-  });
-
-  const tx = await contract.placePrediction(poolId, outcome, txOptions);
-  console.log(`[TRANSACTION] ${label} submitted: ${tx.hash}`);
-  return tx;
-};
-
-const toWalletTransaction = (txData) => ({
-  from: txData.from,
-  to: txData.to,
-  data: txData.data,
-  value: ethers.toQuantity(txData.value)
-});
-
-const sendViaInjectedWallet = async ({ injectedProvider, provider, txData, label }) => {
-  const walletTx = toWalletTransaction(txData);
-  console.log(`[TRANSACTION] ${label} payload:`, walletTx);
-  const hash = await injectedProvider.request({
-    method: 'eth_sendTransaction',
-    params: [walletTx]
-  });
-  console.log(`[TRANSACTION] ${label} submitted: ${hash}`);
-
-  return {
-    hash,
-    wait: () => provider.waitForTransaction(hash)
-  };
-};
-
-const isUserRejectedError = (error) => (
-  error?.code === 4001 ||
-  error?.code === 'ACTION_REJECTED' ||
-  error?.info?.error?.code === 4001 ||
-  error?.message?.includes('user rejected') ||
-  error?.message?.includes('User denied')
-);
-
-const broadcastPrediction = async ({ contract, injectedProvider, provider, txData, poolId, outcome, value, gasLimit }) => {
-  try {
-    return await sendViaInjectedWallet({
-      injectedProvider,
-      provider,
-      txData,
-      label: 'direct injected wallet send'
-    });
-  } catch (directError) {
-    logRpcError('TRANSACTION DIRECT WALLET SEND FAILED', directError);
-
-    if (isUserRejectedError(directError)) {
-      throw directError;
-    }
-
-    console.warn("[TRANSACTION] Direct wallet send failed before signature. Falling back to ethers contract method.");
-  }
-
-  try {
-    const txOptions = gasLimit ? { value, gasLimit } : { value };
-    return await sendViaContract({
-      contract,
-      poolId,
-      outcome,
-      txOptions,
-      label: gasLimit ? 'contract method with gasLimit' : 'contract method wallet-estimated'
-    });
-  } catch (firstError) {
-    logRpcError('TRANSACTION CONTRACT METHOD FAILED', firstError);
-
-    if (!isEmptyWalletRpcError(firstError)) {
-      throw firstError;
-    }
-
-    console.warn("[TRANSACTION] Empty wallet RPC error detected. Retrying once with value only and wallet-native estimation.");
-    try {
-      return await sendViaContract({
-        contract,
-        poolId,
-        outcome,
-        txOptions: { value },
-        label: 'contract method retry without gas overrides'
-      });
-    } catch (retryError) {
-      logRpcError('TRANSACTION CONTRACT RETRY FAILED', retryError);
-
-      if (!isEmptyWalletRpcError(retryError)) {
-        throw retryError;
-      }
-
-      console.warn("[TRANSACTION] Contract method retry failed with empty wallet RPC error. Falling back to direct injected wallet send.");
-      return await sendViaInjectedWallet({
-        injectedProvider,
-        provider,
-        txData,
-        label: 'direct injected wallet fallback'
-      });
-    }
-  }
-};
+const getRevertMessage = (error) => decodeContractError(error);
 
 export const usePrediction = () => {
   const {
-    walletConnected,
-    userAddress,
-    walletType,
     setWalletState,
     addNotification,
     predictionPools,
@@ -236,43 +70,29 @@ export const usePrediction = () => {
 
   const [loading, setLoading] = useState(false);
   const [contractOwner, setContractOwner] = useState(null);
+  const config = useConfig();
+  const { address, chainId, isConnected } = useAccount();
+  const { switchChainAsync } = useSwitchChain();
 
   const refreshBalance = useCallback(async () => {
-    if (!walletConnected || !userAddress || typeof window === 'undefined') return;
-    const provider = getInjectedProvider(walletType);
-    if (!provider) return;
+    if (!isConnected || !address) return;
 
     try {
-      const browserProvider = new ethers.BrowserProvider(provider);
-      const rawBalance = await browserProvider.getBalance(userAddress);
+      const provider = new ethers.JsonRpcProvider(XLAYER_RPC_URLS[activeRpcIndex]);
+      const rawBalance = await provider.getBalance(address);
       const formattedBalance = parseFloat(ethers.formatEther(rawBalance)).toFixed(4);
       setWalletState({ balance: formattedBalance });
     } catch (error) {
       logRpcError('BALANCE REFRESH FAILED', error);
     }
-  }, [walletConnected, walletType, userAddress, setWalletState]);
+  }, [address, isConnected, setWalletState]);
 
-  const getContract = useCallback(async (contractType, needsSigner = false) => {
-    let provider = null;
-    if (walletConnected) {
-      provider = getWeb3Provider(walletType);
-    }
-
-    if (!provider) {
-      if (needsSigner) return null;
-      provider = new ethers.JsonRpcProvider(XLAYER_RPC_URLS[activeRpcIndex]);
-    }
-
-    const address = CONTRACT_ADDRESSES[contractType];
+  const getContract = useCallback(async (contractType) => {
+    const provider = new ethers.JsonRpcProvider(XLAYER_RPC_URLS[activeRpcIndex]);
+    const contractAddress = CONTRACT_ADDRESSES[contractType];
     const abi = getContractAbi(contractType);
-
-    if (needsSigner) {
-      const signer = await provider.getSigner();
-      return new ethers.Contract(address, abi, signer);
-    }
-
-    return new ethers.Contract(address, abi, provider);
-  }, [walletConnected, walletType]);
+    return new ethers.Contract(contractAddress, abi, provider);
+  }, []);
 
   const fetchContractOwner = useCallback(async () => {
     try {
@@ -300,7 +120,7 @@ export const usePrediction = () => {
     return () => {
       cancelled = true;
     };
-  }, [fetchContractOwner, walletConnected]);
+  }, [fetchContractOwner]);
 
   const fetchPredictionPools = useCallback(async (force = false) => {
     const now = Date.now();
@@ -341,11 +161,9 @@ export const usePrediction = () => {
       }));
 
       const activePools = results.filter(Boolean);
-      if (activePools.length > 0) {
-        cache.pools = activePools;
-        cache.lastFetchedPools = now;
-        setPredictionPools(activePools);
-      }
+      cache.pools = activePools;
+      cache.lastFetchedPools = now;
+      setPredictionPools(activePools);
     } catch (error) {
       logRpcError('PREDICTION POOLS FETCH FAILED', error);
       rotateRpcUrl();
@@ -396,11 +214,9 @@ export const usePrediction = () => {
       }));
 
       const activeDisputes = results.filter(Boolean);
-      if (activeDisputes.length > 0) {
-        cache.disputes = activeDisputes;
-        cache.lastFetchedDisputes = now;
-        setDisputes(activeDisputes);
-      }
+      cache.disputes = activeDisputes;
+      cache.lastFetchedDisputes = now;
+      setDisputes(activeDisputes);
     } catch (error) {
       logRpcError('DISPUTES FETCH FAILED', error);
       rotateRpcUrl();
@@ -414,165 +230,102 @@ export const usePrediction = () => {
     value = null,
     pendingMsg,
     successMsg,
-    onSuccess,
-    onFailure
+    onSuccess
   }) => {
+    if (!isConnected) {
+      addNotification('error', 'Please connect a wallet first.');
+      return false;
+    }
+
     setLoading(true);
     addNotification('pending', pendingMsg);
 
     try {
-      const contract = await getContract(contractType, true);
-      if (!contract) throw new Error(`${contractType} contract instance not initialized.`);
+      if (chainId !== xLayerTestnet.id) {
+        await switchChainAsync({ chainId: xLayerTestnet.id });
+      }
 
-      const txOptions = value ? { value } : {};
-      console.log(`[TRANSACTION] ${contractType}.${method} wallet-native payload:`, { args, txOptions });
-      const tx = await contract[method](...args, txOptions);
-      console.log(`[TRANSACTION] ${contractType}.${method} submitted: ${tx.hash}`);
-      addNotification('pending', `Transaction submitted. Awaiting confirmation...`, tx.hash);
+      console.log(`[TRANSACTION] ${contractType}.${method}`, { args, value });
+      const hash = await writeContract(config, {
+        address: CONTRACT_ADDRESSES[contractType],
+        abi: WAGMI_ABIS[contractType],
+        functionName: method,
+        args,
+        value: value || undefined,
+        chainId: xLayerTestnet.id
+      });
 
-      await tx.wait();
+      addNotification('pending', 'Transaction submitted. Awaiting confirmation...', hash);
+      await waitForTransactionReceipt(config, {
+        hash,
+        chainId: xLayerTestnet.id
+      });
+
       clearPredictionCache();
-      addNotification('success', successMsg, tx.hash);
-
+      addNotification('success', successMsg, hash);
       if (onSuccess) await onSuccess();
       await refreshBalance();
       return true;
     } catch (error) {
       logRpcError(`${contractType}.${method} FAILED`, error);
-      if (onFailure) onFailure();
-      addNotification('error', `Transaction failed: ${decodeContractError(error)}`);
+      addNotification('error', `Transaction failed: ${getRevertMessage(error)}`);
       return false;
     } finally {
       setLoading(false);
     }
-  }, [getContract, addNotification, refreshBalance]);
+  }, [addNotification, chainId, config, isConnected, refreshBalance, switchChainAsync]);
 
   const placePrediction = useCallback(async (poolId, outcome, amount) => {
-    if (!walletConnected) {
-      addNotification('error', 'Please connect your Web3 wallet to place a prediction on-chain.');
-      return false;
-    }
+    const value = ensurePositiveAmount(amount);
 
-    const value = ethers.parseEther(amount.toString());
-    setLoading(true);
-    addNotification('pending', 'Performing pre-flight checks and simulating transaction on-chain...');
-
-    try {
-      const contract = await getContract('PredictionPool', true);
-      if (!contract) throw new Error("PredictionPool contract instance not initialized.");
-
-      const provider = getWeb3Provider(walletType);
-      if (!provider) throw new Error("Web3 provider missing.");
-
-      const injectedProvider = getInjectedProvider(walletType);
-      if (!injectedProvider) throw new Error("Injected wallet provider missing.");
-
-      const signer = await provider.getSigner();
-      const connectedAddress = await signer.getAddress();
-
-      validatePredictionInput({ amount, value });
-      await validatePool({ contract, poolId });
-      await validateBalance({ provider, userAddress: connectedAddress, value, amount });
-      await validateExistingBet({ contract, poolId, userAddress: connectedAddress, outcome });
-
-      console.log("[PRE-FLIGHT] Pre-flight checks passed successfully.");
-
-      const txData = await buildPredictionTxData({
-        contract,
-        from: connectedAddress,
-        poolId,
-        outcome,
-        value
-      });
-
-      await simulateTransaction({ provider, txData, contract });
-      const gasLimit = await estimatePredictionGas({ contract, poolId, outcome, value });
-
-      addNotification('pending', `Submitting prediction to wallet: ${amount} OKB...`);
-      const tx = await broadcastPrediction({
-        contract,
-        injectedProvider,
-        provider,
-        txData,
-        poolId,
-        outcome,
-        value,
-        gasLimit
-      });
-
-      addNotification('pending', 'Transaction submitted. Awaiting block confirmation...', tx.hash);
-      await tx.wait();
-
-      clearPredictionCache();
-      addNotification('success', 'Prediction transaction confirmed!', tx.hash);
-      await fetchPredictionPools(true);
-      await refreshBalance();
-      return true;
-    } catch (error) {
-      const decodedMessage = decodeContractError(error);
-      logRpcError('TRANSACTION FAILED', error);
-      addNotification('error', `Transaction execution failed: ${decodedMessage}`);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [walletConnected, walletType, getContract, fetchPredictionPools, refreshBalance, addNotification]);
+    return await handleContractTx({
+      contractType: 'PredictionPool',
+      method: 'placePrediction',
+      args: [poolId, outcome],
+      value,
+      pendingMsg: `Confirm prediction in wallet: ${amount} OKB...`,
+      successMsg: 'Prediction transaction confirmed!',
+      onSuccess: () => fetchPredictionPools(true)
+    });
+  }, [handleContractTx, fetchPredictionPools]);
 
   const castJuryVote = useCallback(async (playId, choice, amount) => {
-    if (!walletConnected) {
-      addNotification('error', 'Please connect your Web3 wallet to cast a jury vote on-chain.');
-      return false;
-    }
+    const value = ensurePositiveAmount(amount);
 
     return await handleContractTx({
       contractType: 'DisputeRegistry',
       method: 'castJuryVote',
       args: [playId, choice],
-      value: ethers.parseEther(amount.toString()),
-      pendingMsg: 'Preparing transaction: cast jury vote...',
+      value,
+      pendingMsg: `Confirm jury vote in wallet: ${amount} OKB...`,
       successMsg: 'Jury vote transaction confirmed!',
       onSuccess: () => fetchDisputes(true)
     });
-  }, [walletConnected, fetchDisputes, addNotification, handleContractTx]);
+  }, [handleContractTx, fetchDisputes]);
 
-  const claimPayout = useCallback(async (poolId) => {
-    if (!walletConnected) {
-      addNotification('error', 'Please connect your Web3 wallet to claim payouts on-chain.');
-      return false;
-    }
-
-    return await handleContractTx({
+  const claimPayout = useCallback(async (poolId) => (
+    await handleContractTx({
       contractType: 'PredictionPool',
       method: 'claimPayout',
       args: [poolId],
       pendingMsg: `Claiming payout for pool ${poolId}...`,
       successMsg: 'Payout claimed successfully!',
       onSuccess: () => fetchPredictionPools(true)
-    });
-  }, [walletConnected, fetchPredictionPools, handleContractTx, addNotification]);
+    })
+  ), [fetchPredictionPools, handleContractTx]);
 
-  const claimJuryRewards = useCallback(async (playId) => {
-    if (!walletConnected) {
-      addNotification('error', 'Please connect your Web3 wallet to claim jury rewards on-chain.');
-      return false;
-    }
-
-    return await handleContractTx({
+  const claimJuryRewards = useCallback(async (playId) => (
+    await handleContractTx({
       contractType: 'DisputeRegistry',
       method: 'claimJuryRewards',
       args: [playId],
       pendingMsg: `Claiming jury rewards for play ${playId}...`,
       successMsg: 'Jury rewards claimed successfully!',
       onSuccess: () => fetchDisputes(true)
-    });
-  }, [walletConnected, fetchDisputes, handleContractTx, addNotification]);
+    })
+  ), [fetchDisputes, handleContractTx]);
 
   const createPoolAndDispute = useCallback(async (playId, poolId, question, description, durationSeconds) => {
-    if (!walletConnected) {
-      addNotification('error', "Wallet must be connected to run admin commands.");
-      return false;
-    }
-
     const poolSuccess = await handleContractTx({
       contractType: 'PredictionPool',
       method: 'createPool',
@@ -592,7 +345,7 @@ export const usePrediction = () => {
       successMsg: `Dispute #${playId} created successfully!`,
       onSuccess: () => fetchDisputes(true)
     });
-  }, [walletConnected, handleContractTx, fetchPredictionPools, fetchDisputes, addNotification]);
+  }, [handleContractTx, fetchPredictionPools, fetchDisputes]);
 
   return {
     loading,

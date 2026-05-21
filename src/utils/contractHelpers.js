@@ -63,15 +63,17 @@ export const PREDICTION_POOL_ABI = [
 // Helper to check for the active Web3 wallet injector selected by app state.
 export const getInjectedProvider = (walletType = '') => {
   if (typeof window !== 'undefined') {
+    const ethereumProviders = window.ethereum?.providers || [];
+
     if (walletType === 'okx') {
-      return window.okxwallet || null;
+      return window.okxwallet || ethereumProviders.find((provider) => provider.isOkxWallet) || null;
     }
 
     if (walletType === 'metamask') {
-      return window.ethereum || null;
+      return ethereumProviders.find((provider) => provider.isMetaMask && !provider.isOkxWallet) || window.ethereum || null;
     }
 
-    return window.okxwallet || window.ethereum || null;
+    return ethereumProviders.find((provider) => provider.isMetaMask && !provider.isOkxWallet) || window.ethereum || window.okxwallet || null;
   }
 
   return null;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useZKProof } from '../hooks/useZKProof';
 import { useWallet } from '../hooks/useWallet';
@@ -20,7 +20,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
 
   const handleCastVote = async () => {
     if (!walletConnected) {
-      await connectWallet('okx');
+      await connectWallet('metamask');
       return;
     }
     if (isInsufficientBalance) return;
@@ -156,13 +156,13 @@ export const JuryVote = ({ activePlayId = 101 }) => {
 
             <button
               onClick={handleCastVote}
-              disabled={loading || (walletConnected && isInsufficientBalance)}
+              disabled={loading || isInsufficientBalance}
               className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading 
                 ? 'SUBMITTING VOTE...' 
-                : !walletConnected 
-                  ? 'CONNECT TO VOTE' 
+                : !walletConnected
+                  ? 'CONNECT METAMASK TO VOTE'
                   : isInsufficientBalance 
                     ? 'INSUFFICIENT OKB BALANCE' 
                     : 'CAST STAKED JURY VOTE'
