@@ -59,6 +59,16 @@ const ensurePositiveAmount = (amount) => {
 
 const getRevertMessage = (error) => decodeContractError(error);
 
+const HIDDEN_NON_X_CUP_MARKET_PATTERNS = [
+  'champions league',
+  'psg',
+  'arsenal'
+];
+
+const shouldShowMarket = (question = '') => (
+  !HIDDEN_NON_X_CUP_MARKET_PATTERNS.some((pattern) => question.toLowerCase().includes(pattern))
+);
+
 export const usePrediction = () => {
   const {
     setWalletState,
@@ -211,7 +221,7 @@ export const usePrediction = () => {
             stakedOutcome1: formatEtherVal(details[5]),
             stakedOutcome2: formatEtherVal(details[6]),
             disputeId: 100 + id,
-            match: id <= 2 ? "Argentina vs France" : "Custom Arena Match"
+            match: id <= 2 ? "World Cup Classic" : "X Cup World Cup Market"
           };
         } catch (error) {
           console.warn(`Pool ${id} fetch error:`, error);
@@ -219,7 +229,7 @@ export const usePrediction = () => {
         }
       }));
 
-      const activePools = results.filter(Boolean);
+      const activePools = results.filter((pool) => pool && shouldShowMarket(pool.question));
       cache.pools = activePools;
       cache.lastFetchedPools = now;
       setPredictionPools(activePools);
@@ -266,7 +276,7 @@ export const usePrediction = () => {
             exists: true,
             verdict: Number(details[8]),
             resolutionTime: Number(details[9]),
-            decisionType: id % 2 === 1 ? "Offside Detection" : "Out of Bounds"
+            decisionType: id % 2 === 1 ? "World Cup VAR Offside" : "World Cup Boundary Review"
           };
         } catch (error) {
           console.warn(`Dispute ${id} fetch error:`, error);
@@ -465,6 +475,22 @@ export const usePrediction = () => {
     });
   }, [handleContractTx, fetchPredictionPools, fetchDisputes]);
 
+  const cancelPool = useCallback(async (poolId) => (
+    await handleContractTx({
+      contractType: 'PredictionPool',
+      method: 'cancelPool',
+      args: [poolId],
+      pendingMsg: `Cancelling Pool #${poolId} on-chain...`,
+      successMsg: `Pool #${poolId} cancelled. Users with stakes can claim refunds.`,
+      history: {
+        type: 'Admin',
+        label: `Cancelled Pool #${poolId}`,
+        target: `Pool #${poolId}`
+      },
+      onSuccess: () => fetchPredictionPools(true)
+    })
+  ), [fetchPredictionPools, handleContractTx]);
+
   return {
     loading,
     predictionPools,
@@ -479,6 +505,7 @@ export const usePrediction = () => {
     claimPayout,
     claimRefund,
     claimJuryRewards,
-    createPoolAndDispute
+    createPoolAndDispute,
+    cancelPool
   };
 };

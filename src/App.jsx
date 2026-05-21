@@ -84,7 +84,7 @@ function App() {
         </div>
 
         <div className="header-center text-glow-cyan">
-          X LAYER L2 | ORACLE DISPATCH: SECURE
+          X CUP | WORLD CUP VAR MARKETS | X LAYER
         </div>
 
         <div className="header-right">
@@ -128,11 +128,11 @@ function App() {
           <>
             <section className="landing-hero">
               <div className="landing-copy">
-                <span className="all-caps-label">Decentralized VAR Prediction Engine</span>
-                <h1>ZK-powered sports markets for disputed referee decisions.</h1>
+                <span className="all-caps-label">Built for X Cup on X Layer</span>
+                <h1>ZK-powered World Cup markets for disputed referee decisions.</h1>
                 <p>
-                  ZK-VAR lets fans predict controversial match outcomes, stake OKB on active markets,
-                  and resolve disputes through an on-chain referee pipeline designed for transparent settlement.
+                  ZK-VAR lets fans predict World Cup VAR moments, stake OKB on active markets,
+                  join dispute voting, and claim rewards after on-chain resolution.
                 </p>
                 <div className="landing-actions">
                   <button type="button" className="neon-btn" onClick={() => setActivePage('markets')}>
@@ -152,7 +152,7 @@ function App() {
                   <span>Dispute</span>
                   <strong>Fan jury consensus</strong>
                   <span>Verify</span>
-                  <strong>SP1 ZK proof flow</strong>
+                  <strong>Owner/oracle ZK flow</strong>
                   <span>Claim</span>
                   <strong>Wallet-scoped rewards</strong>
                 </div>
@@ -163,12 +163,12 @@ function App() {
               <article className="glass-panel feature-card">
                 <LineChart className="text-[#A8FF35]" size={20} />
                 <h3>Prediction Markets</h3>
-                <p>Admins deploy real sports markets; users stake on YES or NO outcomes and winners share the losing-side pool.</p>
+                <p>Admins deploy World Cup-themed markets; users stake on YES or NO outcomes and winners share the losing-side pool.</p>
               </article>
               <article className="glass-panel feature-card">
                 <ShieldCheck className="text-[#00F5FF]" size={20} />
                 <h3>Dispute Tribunal</h3>
-                <p>Fan jurors stake weighted votes on disputed calls before the final verified outcome is submitted on-chain.</p>
+                <p>Fan jurors stake weighted votes on disputed World Cup calls before the final verified outcome is submitted on-chain.</p>
               </article>
               <article className="glass-panel feature-card">
                 <Cpu className="text-[#A8FF35]" size={20} />

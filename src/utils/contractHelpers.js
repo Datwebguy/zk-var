@@ -51,6 +51,7 @@ export const PREDICTION_POOL_ABI = [
   "function pools(uint256) view returns (uint256 poolId, string question, uint256 closingTime, uint8 status, uint8 winningOutcome, uint256 totalStaked, uint256 stakedOutcome1, uint256 stakedOutcome2, bool exists, uint256 resolutionTime, uint256 totalClaimed)",
   "function bets(uint256, address) view returns (uint8 outcome, uint256 amount, bool claimed)",
   "function createPool(uint256 _poolId, string calldata _question, uint256 _durationSeconds) external",
+  "function cancelPool(uint256 _poolId) external",
   "function placePrediction(uint256 _poolId, uint8 _outcome) external payable",
   "function resolvePrediction(uint256 _poolId, uint8 _winningOutcome) external",
   "function claimPayout(uint256 _poolId) external",

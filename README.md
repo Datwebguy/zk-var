@@ -1,8 +1,22 @@
 # ZK-VAR // Zero-Knowledge Video Assistant Referee
 
-> **Sovereign Referee Arena & Decentralized Sports Predictions on X Layer**
+> **World Cup-themed Sovereign Referee Arena & Decentralized Sports Predictions on X Layer**
 > 
-> A decentralized sports prediction market and dispute resolution engine. Outcomes are resolved through a two-stage mechanism: a decentralized crowd-sourced jury tribunal and a Zero-Knowledge-verifiable AI Referee (SP1 ZK-VM) executing on-chain proofs.
+> A World Cup-themed decentralized prediction market and dispute resolution engine. Outcomes are resolved through a two-stage mechanism: a decentralized crowd-sourced jury tribunal and a Zero-Knowledge-verifiable AI Referee (SP1 ZK-VM) executing on-chain proofs.
+
+---
+
+## 🏆 X Cup Alignment
+
+ZK-VAR is built for the **Build X Hackathon: X Cup** as a World Cup-themed project on X Layer.
+
+* **Theme:** World Cup VAR moments, disputed goals, offside calls, penalty reviews, touchline disputes, and fan debate.
+* **Track fit:** Prediction markets, AI/ZK referee flow, social/fan jury participation.
+* **X Layer deployment:** PredictionPool, DisputeRegistry, and ZKVerifier are deployed on X Layer Testnet.
+* **Dedicated X account:** [@TheZkVar](https://x.com/TheZkVar)
+* **Builder:** [@Datweb3guy](https://x.com/Datweb3guy)
+
+The public app now focuses on World Cup-style markets. Non-X Cup markets can be cancelled from the owner-only Admin console so affected users can claim refunds.
 
 ---
 
@@ -76,6 +90,7 @@ Manages tribunals for controversial match plays.
 Receives SP1 verification proofs.
 * Validates that the guest program public output parameters match the play details.
 * Interacts with Succinct's standard `ISP1Verifier` system contract deployed on X Layer to verify proofs.
+* In the current app UI, proof submission is restricted to the contract owner/oracle wallet. For mainnet, the Solidity verifier should also enforce this with an owner or oracle role.
 
 ---
 
@@ -151,7 +166,7 @@ Follow these steps to experience the complete live on-chain lifecycle:
 Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConnect are recommended for X Layer Testnet (Chain ID: 1952). Ensure the connected wallet has testnet `OKB` tokens.
 
 ### Step 2: Place Predictions
-* Choose an active pool in the **Sovereign Referee Arena** (e.g. *Will the VAR check rule Messi's 42nd minute goal OFFSIDE?*).
+* Choose an active World Cup-themed pool in the **Sovereign Referee Arena** (e.g. *Will the FIFA World Cup 2026 opening match include a VAR offside overturn?*).
 * Enter your prediction amount (e.g., `0.1 OKB`) and choose outcome **YES** or **NO**.
 * Click **Place Prediction** and confirm the transaction in your wallet.
 
@@ -160,11 +175,9 @@ Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConn
 * Stake a custom amount of `OKB` and cast your vote on the play (e.g., voting `Valid` / `Invalid`).
 
 ### Step 4: Generate the ZK-VAR Proof
-* Scroll to the **ZK-AI Prover Terminal**.
-* Under the active dispute, select your verdict (e.g., **AI Referee Verdict: Offside detected**).
-* Click **Generate & Verify SP1 Proof**.
-* Watch the log terminal output the live SP1 compilation pipeline, VM boot, guest execution cycles, and proof compilation logs.
-* Approve the transaction in your wallet to submit the proof to `ZKVerifier.sol`.
+* Normal users do not trigger final resolution. They can stake predictions, vote in the tribunal, and claim after settlement.
+* The contract owner/oracle wallet opens the **Tribunal** flow and triggers the **ZK-AI Referee** for the selected World Cup play.
+* The proof pipeline submits the verified verdict to `ZKVerifier.sol`, which resolves the dispute and prediction pool through the registry.
 
 ### Step 5: Claim Rewards
 * Once verified, the dispute status updates to **ResolvedByZK** on-chain, and the prediction pool is settled.

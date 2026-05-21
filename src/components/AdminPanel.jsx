@@ -4,14 +4,15 @@ import { useAppStore } from '../store/useAppStore';
 import { PlusCircle, Wrench, Clock, HelpCircle, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export const AdminPanel = () => {
-  const { createPoolAndDispute, loading, contractOwner } = usePrediction();
+  const { createPoolAndDispute, cancelPool, loading, contractOwner } = usePrediction();
   const { userAddress, walletConnected, addNotification, predictionPools, disputes } = useAppStore();
 
   const [playId, setPlayId] = useState('103');
   const [poolId, setPoolId] = useState('3');
-  const [question, setQuestion] = useState('');
-  const [description, setDescription] = useState('');
+  const [question, setQuestion] = useState('Will the FIFA World Cup 2026 opening match include a VAR offside overturn?');
+  const [description, setDescription] = useState('FIFA World Cup 2026 opening match. Market resolves YES if any goal or major attacking phase is overturned for offside by VAR; otherwise resolves NO.');
   const [duration, setDuration] = useState('86400'); // Default 1 day
+  const [retirePoolId, setRetirePoolId] = useState('3');
 
   // Check if current user is owner
   const ownerLoaded = Boolean(contractOwner);
@@ -93,8 +94,37 @@ export const AdminPanel = () => {
           <div className="bg-[#0c1c13] border border-[#A8FF35]/10 p-3 rounded-lg flex items-center gap-2">
             <CheckCircle2 className="text-[#A8FF35]" size={14} />
             <span className="text-zinc-400 text-3xs">
-              LOGGED IN AS CONTRACT OWNER. Actions deploy to X Layer Testnet.
+              LOGGED IN AS CONTRACT OWNER. Deploy World Cup-themed X Cup markets on X Layer.
             </span>
+          </div>
+
+          <div className="bg-[#1C120C] border border-[#FF9F0A]/20 p-4 rounded-lg flex flex-col gap-3">
+            <div className="flex items-start gap-2.5">
+              <ShieldAlert className="text-[#FF9F0A] shrink-0 mt-0.5" size={16} />
+              <div className="flex flex-col gap-1">
+                <span className="text-[#FF9F0A] font-bold uppercase tracking-wider">Retire non-X Cup market</span>
+                <span className="text-zinc-400 text-3xs leading-normal">
+                  Cancels an unwanted pool on-chain. Existing stakers can claim refunds after cancellation.
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+              <input
+                type="number"
+                value={retirePoolId}
+                onChange={(e) => setRetirePoolId(e.target.value)}
+                className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#FF9F0A] focus:outline-none tracking-wide"
+                min="1"
+              />
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => cancelPool(Number(retirePoolId))}
+                className="px-4 py-2 rounded border border-[#FF9F0A]/40 text-[#FF9F0A] font-heading font-bold uppercase text-xs hover:bg-[#FF9F0A]/10 disabled:opacity-50"
+              >
+                Cancel Pool
+              </button>
+            </div>
           </div>
 
           {/* Primary configuration parameters */}
@@ -144,7 +174,7 @@ export const AdminPanel = () => {
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="e.g. Will the VAR check rule Haaland's 72nd minute header OFFSIDE?"
+              placeholder="e.g. Will the FIFA World Cup 2026 opening match include a VAR offside overturn?"
               className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#A8FF35] focus:outline-none"
               required
             />
@@ -156,7 +186,7 @@ export const AdminPanel = () => {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Haaland 72' - Possible offside on build-up cross. Direct check on attacker posture."
+              placeholder="e.g. FIFA World Cup 2026 opening match. Resolves YES if VAR overturns any attacking phase for offside."
               rows={2}
               className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#A8FF35] focus:outline-none resize-none"
               required
