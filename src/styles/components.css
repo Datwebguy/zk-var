@@ -472,6 +472,63 @@
   gap: 12px;
 }
 
+.app-footer {
+  width: 100%;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 64px;
+  padding: 22px 32px;
+  border-top: 1px solid rgba(168, 255, 53, 0.18);
+  background: rgba(5, 6, 6, 0.82);
+  color: rgba(255, 255, 255, 0.86);
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.app-footer-brand,
+.app-footer-links,
+.app-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-footer-brand {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.app-footer-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #A8FF35;
+  box-shadow: 0 0 12px rgba(168, 255, 53, 0.7);
+}
+
+.app-footer-links a {
+  color: #A8FF35;
+  text-decoration: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.app-footer-links a:hover,
+.app-footer-links a:focus-visible {
+  color: #00F5FF;
+  text-decoration: underline;
+  outline: none;
+}
+
+.app-footer-status {
+  color: rgba(255, 255, 255, 0.78);
+}
+
 /* 9. Prediction Pools & Trade Panel structure */
 .prediction-board-layout {
   display: flex;
@@ -653,6 +710,15 @@
   .feature-grid,
   .guide-steps {
     grid-template-columns: 1fr;
+  }
+
+  .app-footer,
+  .app-footer-brand,
+  .app-footer-links,
+  .app-footer-status {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
   }
 
   .prediction-board-layout {

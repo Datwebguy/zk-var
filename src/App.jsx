@@ -256,15 +256,28 @@ function App() {
         )}
       </main>
 
-      <footer className="w-full px-8 py-6 mt-16 border-t border-zinc-900 flex flex-col sm:flex-row justify-between items-center gap-4 text-3xs font-mono text-zinc-600 relative z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#A8FF35]" />
-          <span>ZK-VAR Platform // Built for X Layer Build X Hackathon 2026</span>
+      <footer className="app-footer">
+        <div className="app-footer-brand">
+          <div className="app-footer-dot" />
+          <span>ZK-VAR Platform // Built on X Layer</span>
         </div>
-        <div className="flex gap-4">
+
+        <div className="app-footer-links">
+          <a href="https://github.com/Datwebguy/zk-var" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+          <a href="https://x.com/TheZkVar" target="_blank" rel="noreferrer">
+            Project X
+          </a>
+          <a href="https://x.com/Datweb3guy" target="_blank" rel="noreferrer">
+            Developer X
+          </a>
+        </div>
+
+        <div className="app-footer-status">
           <span>SP1 verifier: SECURE</span>
           <span>Settlement token: OKB</span>
-          <span className="text-zinc-500">v1.0.0</span>
+          <span>v1.0.0</span>
         </div>
       </footer>
     </div>
