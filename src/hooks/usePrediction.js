@@ -221,7 +221,8 @@ export const usePrediction = () => {
             stakedOutcome1: formatEtherVal(details[5]),
             stakedOutcome2: formatEtherVal(details[6]),
             disputeId: 100 + id,
-            match: id <= 2 ? "World Cup Classic" : "X Cup World Cup Market"
+            match: id <= 2 ? "World Cup Classic" : "X Cup World Cup Market",
+            hiddenFromMarkets: !shouldShowMarket(questionText)
           };
         } catch (error) {
           console.warn(`Pool ${id} fetch error:`, error);
@@ -229,7 +230,7 @@ export const usePrediction = () => {
         }
       }));
 
-      const activePools = results.filter((pool) => pool && shouldShowMarket(pool.question));
+      const activePools = results.filter(Boolean);
       cache.pools = activePools;
       cache.lastFetchedPools = now;
       setPredictionPools(activePools);

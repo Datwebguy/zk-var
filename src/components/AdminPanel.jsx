@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useAppStore } from '../store/useAppStore';
 import { PlusCircle, Wrench, Clock, HelpCircle, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
@@ -7,8 +7,8 @@ export const AdminPanel = () => {
   const { createPoolAndDispute, cancelPool, loading, contractOwner } = usePrediction();
   const { userAddress, walletConnected, addNotification, predictionPools, disputes } = useAppStore();
 
-  const [playId, setPlayId] = useState('103');
-  const [poolId, setPoolId] = useState('3');
+  const [playId, setPlayId] = useState('104');
+  const [poolId, setPoolId] = useState('4');
   const [question, setQuestion] = useState('Will the FIFA World Cup 2026 opening match include a VAR offside overturn?');
   const [description, setDescription] = useState('FIFA World Cup 2026 opening match. Market resolves YES if any goal or major attacking phase is overturned for offside by VAR; otherwise resolves NO.');
   const [duration, setDuration] = useState('86400'); // Default 1 day
@@ -19,6 +19,20 @@ export const AdminPanel = () => {
   const isOwner = walletConnected && ownerLoaded && userAddress?.toLowerCase() === contractOwner?.toLowerCase();
   const canAccess = isOwner;
   const isCheckingOwner = walletConnected && !ownerLoaded;
+  const usedPoolIds = useMemo(() => new Set(predictionPools.map((pool) => Number(pool.poolId))), [predictionPools]);
+  const usedPlayIds = useMemo(() => new Set(disputes.map((dispute) => Number(dispute.playId))), [disputes]);
+  const nextPoolId = useMemo(() => {
+    for (let id = 1; id <= 50; id += 1) {
+      if (!usedPoolIds.has(id)) return id;
+    }
+    return Math.max(0, ...Array.from(usedPoolIds)) + 1;
+  }, [usedPoolIds]);
+  const nextPlayId = useMemo(() => {
+    for (let id = 101; id <= 150; id += 1) {
+      if (!usedPlayIds.has(id)) return id;
+    }
+    return Math.max(100, ...Array.from(usedPlayIds)) + 1;
+  }, [usedPlayIds]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,12 +57,12 @@ export const AdminPanel = () => {
     }
 
     // Check for duplicates
-    if (predictionPools.some(p => p.poolId === poolNum)) {
-      addNotification('error', `Pool ID ${poolNum} already exists.`);
+    if (usedPoolIds.has(poolNum)) {
+      addNotification('error', `Pool ID ${poolNum} already exists on-chain. Cancelled pools cannot be reused. Try Pool ID ${nextPoolId}.`);
       return;
     }
-    if (disputes.some(d => d.playId === playNum)) {
-      addNotification('error', `Play ID ${playNum} already exists.`);
+    if (usedPlayIds.has(playNum)) {
+      addNotification('error', `Play ID ${playNum} already exists on-chain. Try Play ID ${nextPlayId}.`);
       return;
     }
 
@@ -96,6 +110,22 @@ export const AdminPanel = () => {
             <span className="text-zinc-400 text-3xs">
               LOGGED IN AS CONTRACT OWNER. Deploy World Cup-themed X Cup markets on X Layer.
             </span>
+          </div>
+
+          <div className="bg-black/30 border border-[#00F5FF]/15 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span className="text-zinc-400 text-3xs leading-normal">
+              Pool and Play IDs are permanent on-chain. Cancelling a pool enables refunds, but does not free the ID for reuse.
+            </span>
+            <button
+              type="button"
+              className="px-3 py-2 rounded border border-[#00F5FF]/40 text-[#00F5FF] font-heading font-bold uppercase text-3xs hover:bg-[#00F5FF]/10"
+              onClick={() => {
+                setPoolId(nextPoolId.toString());
+                setPlayId(nextPlayId.toString());
+              }}
+            >
+              Use next IDs: Pool {nextPoolId} / Play {nextPlayId}
+            </button>
           </div>
 
           <div className="bg-[#1C120C] border border-[#FF9F0A]/20 p-4 rounded-lg flex flex-col gap-3">

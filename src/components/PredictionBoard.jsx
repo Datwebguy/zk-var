@@ -12,7 +12,8 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const [stakeAmount, setStakeAmount] = useState('0.1');
 
   // Static pre-transaction calculations
-  const selectedPool = predictionPools.find(p => p.poolId === selectedPoolId) || predictionPools[0];
+  const visiblePredictionPools = predictionPools.filter((pool) => !pool.hiddenFromMarkets);
+  const selectedPool = visiblePredictionPools.find(p => p.poolId === selectedPoolId) || visiblePredictionPools[0];
   const poolStakedOutcome1 = selectedPool ? parseFloat(selectedPool.stakedOutcome1) || 0 : 0;
   const poolStakedOutcome2 = selectedPool ? parseFloat(selectedPool.stakedOutcome2) || 0 : 0;
   const poolTotal = selectedPool ? parseFloat(selectedPool.totalStaked) || 0 : 0;
@@ -76,7 +77,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
         </h3>
         
         <div className="prediction-pools-grid">
-          {predictionPools.length === 0 ? (
+          {visiblePredictionPools.length === 0 ? (
             <div className="glass-panel p-6 bg-[#121214]/40 flex flex-col items-center justify-center text-center min-h-[220px] relative overflow-hidden" style={{ gridColumn: '1 / -1' }}>
               <div className="absolute inset-0 bg-gradient-to-br from-[#A8FF35]/5 to-transparent pointer-events-none" />
               <TrendingUp size={36} className="text-zinc-600 mb-3 animate-pulse" />
@@ -86,7 +87,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               </p>
             </div>
           ) : (
-            predictionPools.map((pool) => {
+            visiblePredictionPools.map((pool) => {
               const isActive = pool.disputeId === activePlayId;
               const totalStakedVal = parseFloat(pool.totalStaked) || 0;
               const staked1Val = parseFloat(pool.stakedOutcome1) || 0;
