@@ -4,8 +4,8 @@ import { defineChain } from '@reown/appkit/networks';
 import { QueryClient } from '@tanstack/react-query';
 
 export const xLayerTestnet = defineChain({
-  id: 195,
-  caipNetworkId: 'eip155:195',
+  id: 1952,
+  caipNetworkId: 'eip155:1952',
   chainNamespace: 'eip155',
   name: 'X Layer Testnet',
   nativeCurrency: {
@@ -14,8 +14,8 @@ export const xLayerTestnet = defineChain({
     symbol: 'OKB'
   },
   rpcUrls: {
-    default: { http: ['https://testrpc.xlayer.tech'] },
-    public: { http: ['https://testrpc.xlayer.tech'] }
+    default: { http: ['https://testrpc.xlayer.tech/terigon'] },
+    public: { http: ['https://testrpc.xlayer.tech/terigon'] }
   },
   blockExplorers: {
     default: {

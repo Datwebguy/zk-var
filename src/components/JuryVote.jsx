@@ -7,7 +7,7 @@ import { Shield, Sparkles, Scale, Info, HelpCircle } from 'lucide-react';
 export const JuryVote = ({ activePlayId = 101 }) => {
   const { disputes, castJuryVote, claimJuryRewards, loading } = usePrediction();
   const { generateAndVerifyProof, isZKProving, txLoading } = useZKProof();
-  const { walletConnected, balance, connectWallet } = useWallet();
+  const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
   const [voteChoice, setVoteChoice] = useState(1); // Default to Choice 1: Valid
   const [stakeAmount, setStakeAmount] = useState('0.25'); // Default stake of 0.25 OKB
@@ -16,7 +16,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
 
   const userStake = parseFloat(stakeAmount) || 0.0;
   const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
-  const isInsufficientBalance = walletConnected && (userStake > userBalance);
+  const isInsufficientBalance = walletConnected && balanceReady && (userStake > userBalance);
 
   const handleCastVote = async () => {
     if (!walletConnected) {
@@ -148,7 +148,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
                 <div className="flex justify-between text-3xs font-mono mt-1 text-zinc-500">
                   <span>WALLET BALANCE:</span>
                   <span className={isInsufficientBalance ? 'text-[#FF453A] font-bold' : 'text-[#A8FF35] font-bold'}>
-                    {balance} OKB {isInsufficientBalance && '(INSUFFICIENT)'}
+                    {balanceLoading ? 'CHECKING...' : `${balance} OKB`} {isInsufficientBalance && '(INSUFFICIENT)'}
                   </span>
                 </div>
               )}
@@ -156,13 +156,15 @@ export const JuryVote = ({ activePlayId = 101 }) => {
 
             <button
               onClick={handleCastVote}
-              disabled={loading || isInsufficientBalance}
+              disabled={loading || balanceLoading || isInsufficientBalance}
               className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading 
                 ? 'SUBMITTING VOTE...' 
                 : !walletConnected
-                  ? 'CONNECT METAMASK TO VOTE'
+                  ? 'CONNECT WALLET TO VOTE'
+                  : balanceLoading
+                    ? 'CHECKING OKB BALANCE...'
                   : isInsufficientBalance 
                     ? 'INSUFFICIENT OKB BALANCE' 
                     : 'CAST STAKED JURY VOTE'

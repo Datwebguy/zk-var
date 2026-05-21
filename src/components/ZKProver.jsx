@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useZKProof } from '../hooks/useZKProof';
 import { Terminal, ShieldCheck, Activity, Cpu } from 'lucide-react';
 import { truncateAddress, CONTRACT_ADDRESSES } from '../utils/contractHelpers';
@@ -9,7 +9,6 @@ export const ZKProver = () => {
     zkProofState,
     zkProofLog,
     zkVerifiedHash,
-    zkActivePlayId,
     txLoading,
     resetZKProofPipeline
   } = useZKProof();
@@ -21,7 +20,7 @@ export const ZKProver = () => {
   const defaultLogs = [
     "[SYSTEM] SP1 RISC-V Verifiable Inference engine loaded.",
     `[SYSTEM] Verifier Contract: ${CONTRACT_ADDRESSES.ZKVerifier}`,
-    "[SYSTEM] X Layer Testnet Verifier Node: ONLINE (Chain ID: 195)",
+    "[SYSTEM] X Layer Testnet Verifier Node: ONLINE (Chain ID: 1952)",
     "[SYSTEM] Standing by for Fan Jury Dispute triggers..."
   ];
 
@@ -173,7 +172,7 @@ export const ZKProver = () => {
         ctx.fillStyle = 'rgba(0, 245, 255, 0.6)';
         ctx.font = '500 8.5px monospace';
         ctx.fillText(`SP1 PROVER STATS: STANDBY`, 20, 30);
-        ctx.fillText(`TARGET: xlayer_testnet_195`, 20, 45);
+        ctx.fillText(`TARGET: xlayer_testnet_1952`, 20, 45);
         ctx.fillText(`VERIFIER CONTRACT: ${CONTRACT_ADDRESSES.ZKVerifier.substring(0, 8)}...`, 20, 60);
 
         // Core visual target in Standby mode

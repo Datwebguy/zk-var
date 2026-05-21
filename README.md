@@ -18,7 +18,7 @@ Controversial refereeing decisions—like contested offsides, touchline exits, a
 
 ## 🛠️ Deployed Smart Contracts (X Layer Testnet)
 
-All smart contracts are fully open-source, compiled, and deployed on the **X Layer Testnet (Chain ID: 195)** using native `OKB` tokens.
+All smart contracts are fully open-source, compiled, and deployed on the **X Layer Testnet (Chain ID: 1952)** using native `OKB` tokens.
 
 | Contract Name | Deployed Address | Explorer Link |
 | :--- | :--- | :--- |
@@ -98,19 +98,33 @@ npm install
 Create a `.env` file in the root directory:
 ```env
 PRIVATE_KEY=your_deployer_private_key_here
-RPC_URL=https://testrpc.xlayer.tech
-RPC_FALLBACK_URL=https://xlayertestrpc.okx.com
+RPC_URL=https://testrpc.xlayer.tech/terigon
+RPC_FALLBACK_URL=https://xlayertestrpc.okx.com/terigon
 VITE_REOWN_PROJECT_ID=your_reown_project_id_here
 ```
 *(The local `.env` is ignored by git to keep your private key secure.)*
 
-### 4. Running the Development Server
+### 4. X Layer Testnet Wallet Settings
+If your wallet asks you to add the network manually, use the official X Layer testnet details:
+
+```text
+Network name: X Layer Testnet
+Chain ID: 1952
+Currency symbol: OKB
+RPC URL: https://testrpc.xlayer.tech/terigon
+Fallback RPC URL: https://xlayertestrpc.okx.com/terigon
+Block explorer: https://www.okx.com/web3/explorer/xlayer-test
+```
+
+If a wallet shows `invalid chain ID`, remove any old custom X Layer network using chain ID `195` and re-add it with chain ID `1952`.
+
+### 5. Running the Development Server
 ```bash
 npm run dev
 ```
 Open `http://localhost:3000` to interact with the ZK-VAR interface.
 
-### 5. Smart Contract Tests (Foundry)
+### 6. Smart Contract Tests (Foundry)
 Execute the contract test suite:
 ```bash
 forge test
@@ -123,7 +137,7 @@ forge test
 Follow these steps to experience the complete live on-chain lifecycle:
 
 ### Step 1: Connect your Wallet
-Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConnect are recommended for X Layer Testnet (Chain ID: 195). Ensure the connected wallet has testnet `OKB` tokens.
+Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConnect are recommended for X Layer Testnet (Chain ID: 1952). Ensure the connected wallet has testnet `OKB` tokens.
 
 ### Step 2: Place Predictions
 * Choose an active pool in the **Sovereign Referee Arena** (e.g. *Will the VAR check rule Messi's 42nd minute goal OFFSIDE?*).

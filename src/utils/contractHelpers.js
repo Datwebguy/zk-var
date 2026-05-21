@@ -7,10 +7,10 @@ export const CONTRACT_ADDRESSES = {
   PredictionPool: "0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F"
 };
 
-export const XLAYER_CHAIN_ID = 195;
+export const XLAYER_CHAIN_ID = 1952;
 export const XLAYER_RPC_URLS = [
-  "https://testrpc.xlayer.tech",
-  "https://xlayertestrpc.okx.com"
+  "https://testrpc.xlayer.tech/terigon",
+  "https://xlayertestrpc.okx.com/terigon"
 ];
 
 export const ZK_VERIFIER_ABI = [

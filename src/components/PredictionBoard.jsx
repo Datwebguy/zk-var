@@ -5,7 +5,7 @@ import { TrendingUp, HelpCircle, AlertCircle, Coins } from 'lucide-react';
 
 export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const { predictionPools, placePrediction, loading } = usePrediction();
-  const { walletConnected, balance, connectWallet } = useWallet();
+  const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
   const [selectedPoolId, setSelectedPoolId] = useState(1);
   const [selectedOutcome, setSelectedOutcome] = useState(1); // 1 = Yes (Valid), 2 = No (Invalid)
@@ -21,7 +21,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const newTotal = poolTotal + userStake;
   
   const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
-  const isInsufficientBalance = walletConnected && (userStake > userBalance);
+  const isInsufficientBalance = walletConnected && balanceReady && (userStake > userBalance);
 
   // Dynamic payout calculations
   let calculatedPayout = '0.00';
@@ -253,7 +253,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                 <div className="flex justify-between text-3xs font-mono mt-1 text-zinc-500">
                   <span>WALLET BALANCE:</span>
                   <span className={isInsufficientBalance ? 'text-[#FF453A] font-bold' : 'text-[#A8FF35] font-bold'}>
-                    {balance} OKB {isInsufficientBalance && '(INSUFFICIENT)'}
+                    {balanceLoading ? 'CHECKING...' : `${balance} OKB`} {isInsufficientBalance && '(INSUFFICIENT)'}
                   </span>
                 </div>
               )}
@@ -279,13 +279,15 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
             {/* Place transaction button */}
             <button
               onClick={handleSubmitPrediction}
-              disabled={loading || isInsufficientBalance}
+              disabled={loading || balanceLoading || isInsufficientBalance}
               className="neon-btn w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading 
                 ? 'BROADCASTING...' 
                 : !walletConnected
-                  ? 'CONNECT METAMASK TO PLACE'
+                  ? 'CONNECT WALLET TO PLACE'
+                  : balanceLoading
+                    ? 'CHECKING OKB BALANCE...'
                   : isInsufficientBalance 
                     ? 'INSUFFICIENT OKB BALANCE' 
                     : 'SUBMIT PREDICTION'

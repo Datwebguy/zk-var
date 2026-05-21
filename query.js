@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 
-const RPC_URL = "https://testrpc.xlayer.tech";
+const RPC_URL = "https://testrpc.xlayer.tech/terigon";
 const PREDICTION_POOL_ADDRESS = "0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F";
 const USER_WALLET = "0xd759c0017a1f7fbdaee62a1b943b1ec90a02d0fe";
 
@@ -77,5 +77,4 @@ async function main() {
 }
 
 main();
-
 

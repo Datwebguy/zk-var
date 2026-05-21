@@ -113,7 +113,7 @@ export const WalletConnect = () => {
                       <span className="wallet-hud-stat-label">NETWORK:</span>
                       <span className="wallet-hud-stat-val cyan">
                         <Activity size={10} className="animate-pulse" />
-                        {chainId === 195 ? 'X Layer Test' : 'Unknown Chain'}
+                        {chainId === 1952 ? 'X Layer Test' : 'Unknown Chain'}
                       </span>
                     </div>
                   </div>
