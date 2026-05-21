@@ -190,6 +190,18 @@
   min-width: 210px;
 }
 
+.header-brand-link {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.header-brand-link:focus-visible {
+  outline: 2px solid #A8FF35;
+  outline-offset: 4px;
+}
+
 .header-brand-logo {
   display: block;
   width: 220px;

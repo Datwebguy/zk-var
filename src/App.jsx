@@ -59,11 +59,18 @@ function App() {
 
       <header className="header-bar">
         <div className="header-left">
-          <img
-            src="/zk-var-logo.svg"
-            alt="ZK-VAR Sovereign Referee Arena"
-            className="header-brand-logo"
-          />
+          <button
+            type="button"
+            className="header-brand-link"
+            onClick={() => setActivePage('home')}
+            aria-label="Go to ZK-VAR homepage"
+          >
+            <img
+              src="/zk-var-logo.svg"
+              alt="ZK-VAR Sovereign Referee Arena"
+              className="header-brand-logo"
+            />
+          </button>
         </div>
 
         <div className="header-center text-glow-cyan">
