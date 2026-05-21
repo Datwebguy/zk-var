@@ -13,6 +13,7 @@ import {
   formatEtherVal,
   logRpcError
 } from '../utils/contractHelpers';
+import { savePersonalTransaction } from '../utils/transactionHistory';
 import { xLayerTestnet } from '../config/wagmi';
 
 let cache = {
@@ -230,7 +231,8 @@ export const usePrediction = () => {
     value = null,
     pendingMsg,
     successMsg,
-    onSuccess
+    onSuccess,
+    history
   }) => {
     if (!isConnected) {
       addNotification('error', 'Please connect a wallet first.');
@@ -262,6 +264,14 @@ export const usePrediction = () => {
       });
 
       clearPredictionCache();
+      savePersonalTransaction(address, {
+        hash,
+        type: history?.type || method,
+        label: history?.label || successMsg,
+        amount: history?.amount || '',
+        target: history?.target || '',
+        status: 'confirmed'
+      });
       addNotification('success', successMsg, hash);
       if (onSuccess) await onSuccess();
       await refreshBalance();
@@ -273,7 +283,7 @@ export const usePrediction = () => {
     } finally {
       setLoading(false);
     }
-  }, [addNotification, chainId, config, isConnected, refreshBalance, switchChainAsync]);
+  }, [addNotification, address, chainId, config, isConnected, refreshBalance, switchChainAsync]);
 
   const placePrediction = useCallback(async (poolId, outcome, amount) => {
     const value = ensurePositiveAmount(amount);
@@ -285,6 +295,12 @@ export const usePrediction = () => {
       value,
       pendingMsg: `Confirm prediction in wallet: ${amount} OKB...`,
       successMsg: 'Prediction transaction confirmed!',
+      history: {
+        type: 'Prediction',
+        label: `Placed prediction on Pool #${poolId} - Outcome ${outcome}`,
+        amount: `${amount} OKB`,
+        target: `Pool #${poolId}`
+      },
       onSuccess: () => fetchPredictionPools(true)
     });
   }, [handleContractTx, fetchPredictionPools]);
@@ -299,6 +315,12 @@ export const usePrediction = () => {
       value,
       pendingMsg: `Confirm jury vote in wallet: ${amount} OKB...`,
       successMsg: 'Jury vote transaction confirmed!',
+      history: {
+        type: 'Jury Vote',
+        label: `Cast jury vote on Play #${playId} - Choice ${choice}`,
+        amount: `${amount} OKB`,
+        target: `Play #${playId}`
+      },
       onSuccess: () => fetchDisputes(true)
     });
   }, [handleContractTx, fetchDisputes]);
@@ -310,6 +332,11 @@ export const usePrediction = () => {
       args: [poolId],
       pendingMsg: `Claiming payout for pool ${poolId}...`,
       successMsg: 'Payout claimed successfully!',
+      history: {
+        type: 'Claim',
+        label: `Claimed payout for Pool #${poolId}`,
+        target: `Pool #${poolId}`
+      },
       onSuccess: () => fetchPredictionPools(true)
     })
   ), [fetchPredictionPools, handleContractTx]);
@@ -321,6 +348,11 @@ export const usePrediction = () => {
       args: [playId],
       pendingMsg: `Claiming jury rewards for play ${playId}...`,
       successMsg: 'Jury rewards claimed successfully!',
+      history: {
+        type: 'Claim',
+        label: `Claimed jury rewards for Play #${playId}`,
+        target: `Play #${playId}`
+      },
       onSuccess: () => fetchDisputes(true)
     })
   ), [fetchDisputes, handleContractTx]);

@@ -59,6 +59,13 @@ Handles prediction pool lifecycle (Creation, Betting, Resolution, Payout Claims,
 * Users bet on outcomes `1 (Yes)` or `2 (No)` by sending native `OKB` to `placePrediction()`.
 * Resolution is locked until the `DisputeRegistry` contract provides the authoritative referee verdict.
 
+### Transaction History
+The interface includes two transaction history views:
+* **My Wallet:** wallet-scoped activity for the connected address, including dApp-submitted transactions and matching on-chain stake/claim events.
+* **Market Feed:** public on-chain prediction and jury stake events scanned from X Layer logs, with direct OKX Explorer links.
+
+The X Layer testnet RPC limits `eth_getLogs` ranges to 100 blocks, so history is fetched in small chunks. Tune `VITE_HISTORY_LOOKBACK_BLOCKS` if you need a wider or faster public feed.
+
 ### 2. DisputeRegistry.sol
 Manages tribunals for controversial match plays. 
 * Fans stake `OKB` to back their vote choices: `Valid`, `Invalid`, or `Inconclusive`.
@@ -101,6 +108,10 @@ PRIVATE_KEY=your_deployer_private_key_here
 RPC_URL=https://testrpc.xlayer.tech/terigon
 RPC_FALLBACK_URL=https://xlayertestrpc.okx.com/terigon
 VITE_REOWN_PROJECT_ID=your_reown_project_id_here
+
+# Optional history scan tuning for the deployed contracts
+VITE_HISTORY_START_BLOCK=30819655
+VITE_HISTORY_LOOKBACK_BLOCKS=12000
 ```
 *(The local `.env` is ignored by git to keep your private key secure.)*
 

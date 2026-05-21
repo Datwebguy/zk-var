@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatedBackground } from './components/AnimatedBackground';
 import { VARPanel } from './components/VARPanel';
 import { JuryVote } from './components/JuryVote';
@@ -6,8 +6,8 @@ import { PredictionBoard } from './components/PredictionBoard';
 import { WalletConnect } from './components/WalletConnect';
 import { ZKProver } from './components/ZKProver';
 import { AdminPanel } from './components/AdminPanel';
+import { TransactionHistory } from './components/TransactionHistory';
 import { usePrediction } from './hooks/usePrediction';
-import { useAppStore } from './store/useAppStore';
 import { ShieldAlert, Trophy, ShieldCheck, Activity, Cpu, Wrench } from 'lucide-react';
 
 // Import design system sheets
@@ -17,8 +17,7 @@ import './styles/components.css';
 
 function App() {
   const [activePlayId, setActivePlayId] = useState(101); // Default to Messi offside play
-  const { fetchPredictionPools, fetchDisputes, contractOwner } = usePrediction();
-  const { walletConnected, userAddress } = useAppStore();
+  const { fetchPredictionPools, fetchDisputes } = usePrediction();
   const [showAdminConsole, setShowAdminConsole] = useState(false);
 
   // Load contract values on startup
@@ -153,6 +152,10 @@ function App() {
             onSelectPlay={(playId) => setActivePlayId(playId)} 
             activePlayId={activePlayId} 
           />
+        </div>
+
+        <div className="full-width-bottom">
+          <TransactionHistory />
         </div>
 
       </main>

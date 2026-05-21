@@ -41,7 +41,8 @@ export const DISPUTE_REGISTRY_ABI = [
   "function getDisputeDetails(uint256 _playId) view returns (uint256 predictionPoolId, string memory description, uint256 votingEndTime, uint8 status, uint256 totalJuryStaked, uint256 votesValid, uint256 votesInvalid, uint256 votesInconclusive, uint8 verdict, uint256 resolutionTime)",
   "event DisputeCreated(uint256 indexed playId, string description, uint256 votingEndTime)",
   "event VoteCast(uint256 indexed playId, address indexed voter, uint8 choice, uint256 stake)",
-  "event DisputeResolved(uint256 indexed playId, uint8 status, uint8 verdict)"
+  "event DisputeResolved(uint256 indexed playId, uint8 status, uint8 verdict)",
+  "event RewardsClaimed(uint256 indexed playId, address indexed voter, uint256 amount)"
 ];
 
 export const PREDICTION_POOL_ABI = [
@@ -57,7 +58,9 @@ export const PREDICTION_POOL_ABI = [
   "function getPoolDetails(uint256 _poolId) view returns (string memory question, uint256 closingTime, uint8 status, uint8 winningOutcome, uint256 totalStaked, uint256 stakedOutcome1, uint256 stakedOutcome2, uint256 resolutionTime)",
   "event PoolCreated(uint256 indexed poolId, string question, uint256 closingTime)",
   "event BetPlaced(uint256 indexed poolId, address indexed user, uint8 outcome, uint256 amount)",
-  "event PoolResolved(uint256 indexed poolId, uint8 winningOutcome)"
+  "event PoolResolved(uint256 indexed poolId, uint8 winningOutcome)",
+  "event PayoutClaimed(uint256 indexed poolId, address indexed user, uint256 amount)",
+  "event RefundClaimed(uint256 indexed poolId, address indexed user, uint256 amount)"
 ];
 
 // Helper to check for the active Web3 wallet injector selected by app state.
