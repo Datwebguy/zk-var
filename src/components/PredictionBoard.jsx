@@ -244,7 +244,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
       {/* 2. Fast Trade Panel (HUD) */}
       <div className="fast-trade-section">
         <h3 className="section-title text-[#00F5FF]">
-          <Coins size={16} /> Fast Trade Panel
+          <Coins size={16} /> Prediction Panel
         </h3>
 
         {!selectedPool ? (
@@ -400,13 +400,13 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                 <span className="text-white tabular-nums">0.00014 OKB</span>
               </div>
               <div className="flex justify-between text-zinc-500">
-                <span>ESTIMATED YIELD:</span>
+                <span>ESTIMATED RETURN:</span>
                 <span className="text-glow-green text-[#A8FF35] tabular-nums font-bold">~ {calculatedPayout} OKB</span>
               </div>
               <div className="h-px bg-zinc-800 my-1" />
               <div className="flex items-start gap-1 text-zinc-500 leading-normal">
                 <AlertCircle size={10} className="text-[#00F5FF] shrink-0 mt-0.5" />
-                <span>Yield shifts dynamically based on overall pool weights at resolution time.</span>
+                <span>Return shifts dynamically based on pool weights at resolution time.</span>
               </div>
                 </div>
 

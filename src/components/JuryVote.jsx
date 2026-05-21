@@ -5,7 +5,7 @@ import { useWallet } from '../hooks/useWallet';
 import { Shield, Sparkles, Scale, Info, HelpCircle } from 'lucide-react';
 
 export const JuryVote = ({ activePlayId = 101 }) => {
-  const { disputes, castJuryVote, claimJuryRewards, loading } = usePrediction();
+  const { disputes, userDisputeVotes, castJuryVote, claimJuryRewards, loading } = usePrediction();
   const { generateAndVerifyProof, isZKProving, txLoading } = useZKProof();
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
@@ -13,6 +13,11 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   const [stakeAmount, setStakeAmount] = useState('0.25'); // Default stake of 0.25 OKB
 
   const dispute = disputes.find(d => d.playId === activePlayId) || disputes[0];
+  const userVote = dispute ? userDisputeVotes[dispute.playId] : null;
+  const userVoteStake = parseFloat(userVote?.stake || '0') || 0;
+  const userHasVote = userVoteStake > 0;
+  const userVoteClaimed = Boolean(userVote?.claimed);
+  const userVoteEligible = dispute?.verdict === 3 || Number(userVote?.choice) === Number(dispute?.verdict);
 
   const userStake = parseFloat(stakeAmount) || 0.0;
   const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
@@ -177,17 +182,31 @@ export const JuryVote = ({ activePlayId = 101 }) => {
           <div className="border border-zinc-800 rounded-lg p-5 bg-black/60 flex flex-col gap-4 font-mono text-xs">
             <div className="flex items-start gap-2.5 text-zinc-400 leading-normal">
               <Info size={16} className="text-[#A8FF35] shrink-0 mt-0.5" />
-              <span>
-                The AI Referee verified this decision on-chain. If your jury vote matched the verified verdict, click below to claim your proportional reward.
+            <span>
+                {userVoteClaimed
+                  ? 'Your jury reward for this dispute has already been claimed on-chain.'
+                  : userHasVote
+                    ? userVoteEligible
+                      ? 'Your jury vote is eligible. Claim your proportional reward or refund.'
+                      : 'Your jury vote did not match the final verdict, so there is no reward to claim.'
+                    : 'You do not have a jury stake in this dispute.'}
               </span>
             </div>
 
             <button
               onClick={() => claimJuryRewards(activePlayId)}
-              disabled={loading}
+              disabled={loading || !userHasVote || userVoteClaimed || !userVoteEligible}
               className="neon-btn w-full py-3 mt-1"
             >
-              {loading ? 'CLAIMING...' : 'CLAIM JURY REWARDS'}
+              {loading
+                ? 'CLAIMING...'
+                : userVoteClaimed
+                  ? 'JURY REWARD CLAIMED'
+                  : !userHasVote
+                    ? 'NO JURY STAKE'
+                  : !userVoteEligible
+                    ? 'NOT ELIGIBLE'
+                    : 'CLAIM JURY REWARDS'}
             </button>
           </div>
         )}
@@ -245,7 +264,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
             <span className="text-[#A8FF35] font-bold block mb-1">ZK VERDICT RESOLVED</span>
             <div className="flex justify-between">
               <span>AI DETERMINED:</span>
-              <span className="text-[#A8FF35] font-bold uppercase">{dispute.zkVerdict === 1 ? 'OFFSIDE' : 'ONSIDE'}</span>
+              <span className="text-[#A8FF35] font-bold uppercase">{dispute.verdict === 1 ? 'OFFSIDE' : dispute.verdict === 2 ? 'ONSIDE' : 'INCONCLUSIVE'}</span>
             </div>
             <div className="flex justify-between">
               <span>ON-CHAIN RESOLUTION:</span>

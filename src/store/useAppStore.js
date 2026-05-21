@@ -11,6 +11,8 @@ export const useAppStore = create((set, get) => ({
   // Prediction Markets & Dispute State
   predictionPools: [],
   disputes: [],
+  userPoolBets: {},
+  userDisputeVotes: {},
 
   // ZK VM Pipeline State (SP1 Succinct)
   isZKProving: false,
@@ -64,6 +66,10 @@ export const useAppStore = create((set, get) => ({
   setPredictionPools: (pools) => set({ predictionPools: pools }),
   
   setDisputes: (disputes) => set({ disputes: disputes }),
+
+  setUserPoolBets: (bets) => set({ userPoolBets: bets }),
+
+  setUserDisputeVotes: (votes) => set({ userDisputeVotes: votes }),
 
   // ZK-VM Proof Pipeline Actions
   startZKProofPipeline: (playId, isOffside, verifyTxFn, onSuccessCallback) => {

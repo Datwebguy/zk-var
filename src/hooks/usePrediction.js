@@ -64,14 +64,17 @@ export const usePrediction = () => {
     setWalletState,
     addNotification,
     predictionPools,
+    userPoolBets,
     disputes,
+    userDisputeVotes,
     setPredictionPools,
-    setDisputes
+    setDisputes,
+    setUserPoolBets,
+    setUserDisputeVotes
   } = useAppStore();
 
   const [loading, setLoading] = useState(false);
   const [contractOwner, setContractOwner] = useState(null);
-  const [userPoolBets, setUserPoolBets] = useState({});
   const config = useConfig();
   const { address, chainId, isConnected } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -148,7 +151,33 @@ export const usePrediction = () => {
     } catch (error) {
       logRpcError('USER POOL BETS FETCH FAILED', error);
     }
-  }, [address, getContract]);
+  }, [address, getContract, setUserPoolBets]);
+
+  const fetchUserDisputeVotes = useCallback(async (playIds) => {
+    if (!address || playIds.length === 0) {
+      setUserDisputeVotes({});
+      return;
+    }
+
+    try {
+      const contract = await getContract('DisputeRegistry');
+      const entries = await Promise.all(playIds.map(async (playId) => {
+        const vote = await contract.votes(playId, address);
+        return [
+          playId,
+          {
+            choice: Number(vote[0]),
+            stake: formatEtherVal(vote[1]),
+            claimed: Boolean(vote[2])
+          }
+        ];
+      }));
+
+      setUserDisputeVotes(Object.fromEntries(entries));
+    } catch (error) {
+      logRpcError('USER DISPUTE VOTES FETCH FAILED', error);
+    }
+  }, [address, getContract, setUserDisputeVotes]);
 
   const fetchPredictionPools = useCallback(async (force = false) => {
     const now = Date.now();
@@ -206,6 +235,7 @@ export const usePrediction = () => {
     const now = Date.now();
     if (!force && cache.disputes && (now - cache.lastFetchedDisputes < STALE_TIME)) {
       setDisputes(cache.disputes);
+      await fetchUserDisputeVotes(cache.disputes.map((dispute) => dispute.playId));
       return;
     }
 
@@ -247,11 +277,12 @@ export const usePrediction = () => {
       cache.disputes = activeDisputes;
       cache.lastFetchedDisputes = now;
       setDisputes(activeDisputes);
+      await fetchUserDisputeVotes(activeDisputes.map((dispute) => dispute.playId));
     } catch (error) {
       logRpcError('DISPUTES FETCH FAILED', error);
       rotateRpcUrl();
     }
-  }, [getContract, setDisputes]);
+  }, [fetchUserDisputeVotes, getContract, setDisputes]);
 
   const handleContractTx = useCallback(async ({
     contractType,
@@ -438,6 +469,7 @@ export const usePrediction = () => {
     predictionPools,
     userPoolBets,
     disputes,
+    userDisputeVotes,
     contractOwner,
     fetchPredictionPools,
     fetchDisputes,

@@ -7,6 +7,7 @@ import { WalletConnect } from './components/WalletConnect';
 import { ZKProver } from './components/ZKProver';
 import { AdminPanel } from './components/AdminPanel';
 import { TransactionHistory } from './components/TransactionHistory';
+import { ClaimCenter } from './components/ClaimCenter';
 import { usePrediction } from './hooks/usePrediction';
 import { ShieldAlert, Trophy, ShieldCheck, Activity, Cpu, Wrench } from 'lucide-react';
 
@@ -152,6 +153,10 @@ function App() {
             onSelectPlay={(playId) => setActivePlayId(playId)} 
             activePlayId={activePlayId} 
           />
+        </div>
+
+        <div className="full-width-bottom">
+          <ClaimCenter />
         </div>
 
         <div className="full-width-bottom">
