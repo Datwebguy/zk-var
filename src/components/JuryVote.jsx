@@ -41,9 +41,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   };
 
   const handleTriggerZK = () => {
-    // Determine the verified output dynamically based on playId (101 is Offside, 102 is Touchline valid/invalid)
-    const isOffsideVerdict = activePlayId === 101;
-    generateAndVerifyProof(activePlayId, isOffsideVerdict);
+    generateAndVerifyProof(activePlayId);
   };
 
   // Convert status code to readable badge text
@@ -264,7 +262,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
               Trigger ZK-AI Referee (SP1)
             </button>
             <span className="text-3xs text-zinc-600 text-center leading-normal">
-              Compiles ZK-VM guest program, performs proof inference, and verifies on-chain.
+              Requests a real prover result, then verifies the SP1 proof on-chain.
             </span>
           </div>
         ) : !isClosed ? (
@@ -278,7 +276,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
           <div className="bg-[#121214]/60 border border-zinc-800 rounded-lg p-4 flex flex-col gap-2 text-3xs text-zinc-500">
             <span className="text-[#A8FF35] font-bold block mb-1">ZK VERDICT RESOLVED</span>
             <div className="flex justify-between">
-              <span>AI DETERMINED:</span>
+              <span>VERIFIER DETERMINED:</span>
               <span className="text-[#A8FF35] font-bold uppercase">{dispute.verdict === 1 ? 'OFFSIDE' : dispute.verdict === 2 ? 'ONSIDE' : 'INCONCLUSIVE'}</span>
             </div>
             <div className="flex justify-between">

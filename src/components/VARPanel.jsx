@@ -4,11 +4,11 @@ import { Shield, Target, Play, Zap, Cpu } from 'lucide-react';
 export const VARPanel = ({ activePlayId = 101 }) => {
   const canvasRef = useRef(null);
   const [telemetry, setTelemetry] = useState({
-    attackerSpeed: '32.4 km/h',
-    distanceToLine: '+0.12m (Offside)',
-    ballVelocity: '82.5 km/h',
-    inferenceConfidence: '99.8%',
-    frameId: 'FRAME_4812_SEC5'
+    attackerSpeed: 'provider input',
+    distanceToLine: 'awaiting proof',
+    ballVelocity: 'provider input',
+    inferenceConfidence: 'proof required',
+    frameId: 'committed data hash'
   });
 
   useEffect(() => {
@@ -220,14 +220,14 @@ export const VARPanel = ({ activePlayId = 101 }) => {
         ctx.stroke();
       });
 
-      // Frame HUD data update
+      // Browser visualization only. Settlement data must come from the prover API.
       if (frame % 30 === 0) {
         setTelemetry({
-          attackerSpeed: `${(31.2 + Math.random() * 2).toFixed(1)} km/h`,
-          distanceToLine: activePlayId === 101 ? `${(0.10 + Math.random() * 0.05).toFixed(2)}m (Offside)` : `touchline gap: ${(0.02 + Math.random() * 0.01).toFixed(3)}m (IN)`,
-          ballVelocity: `${(80.5 + Math.random() * 4).toFixed(1)} km/h`,
-          inferenceConfidence: `${(99.6 + Math.random() * 0.3).toFixed(2)}%`,
-          frameId: `FRAME_4812_SEC${Math.floor(frame / 60)}`
+          attackerSpeed: 'provider input',
+          distanceToLine: activePlayId === 101 ? 'offside proof required' : 'boundary proof required',
+          ballVelocity: 'provider input',
+          inferenceConfidence: 'verified on-chain',
+          frameId: `PLAY_${activePlayId}`
         });
       }
     };
@@ -257,7 +257,7 @@ export const VARPanel = ({ activePlayId = 101 }) => {
             style={{ objectFit: 'contain' }}
           />
           <div className="absolute bottom-3 left-3 bg-zinc-950/80 px-3 py-1 rounded text-xs font-mono border border-zinc-800 text-glow-green text-[#A8FF35] flex items-center gap-1.5 z-10">
-            <Cpu size={12} className="animate-spin" /> Live SP1 Guest Inference Sandbox
+            <Cpu size={12} className="animate-spin" /> Referee Data Visualization
           </div>
         </div>
 
@@ -287,14 +287,14 @@ export const VARPanel = ({ activePlayId = 101 }) => {
               </div>
               <div className="h-px bg-zinc-800/80 my-1" />
               <div className="flex justify-between items-center text-xs">
-                <span className="text-[#A8FF35] font-bold">AI CONFIDENCE:</span>
+                <span className="text-[#A8FF35] font-bold">PROOF STATUS:</span>
                 <span className="text-[#A8FF35] font-bold tabular-nums">{telemetry.inferenceConfidence}</span>
               </div>
             </div>
           </div>
 
           <div className="text-3xs text-zinc-500 flex flex-col gap-2">
-            <span className="flex items-center gap-1.5"><Shield size={12} className="text-[#A8FF35]" /> ZK-VM Verifiable Inference: SP1 enabled.</span>
+            <span className="flex items-center gap-1.5"><Shield size={12} className="text-[#A8FF35]" /> Settlement requires a real SP1 proof.</span>
             <span className="flex items-center gap-1.5"><Target size={12} className="text-[#00F5FF]" /> Direct on-chain resolution via X Layer.</span>
           </div>
         </div>

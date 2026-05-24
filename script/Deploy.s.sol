@@ -13,9 +13,8 @@ contract DeployScript is Script {
         
         vm.startBroadcast(deployerPrivateKey);
 
-        // Official SP1 Verifier address on X Layer Testnet
-        address sp1Verifier = 0x3f62cD685a62CFc27b0D627Fde3c613e5e29699A;
-        bytes32 programVKey = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        address sp1Verifier = vm.envAddress("SP1_VERIFIER");
+        bytes32 programVKey = vm.envBytes32("SP1_PROGRAM_VKEY");
 
         // 1. Deploy ZKVerifier
         ZKVerifier zkVerifier = new ZKVerifier(sp1Verifier, programVKey);

@@ -90,7 +90,10 @@ Manages tribunals for controversial match plays.
 Receives SP1 verification proofs.
 * Validates that the guest program public output parameters match the play details.
 * Interacts with Succinct's standard `ISP1Verifier` system contract deployed on X Layer to verify proofs.
-* In the current app UI, proof submission is restricted to the contract owner/oracle wallet. For mainnet, the Solidity verifier should also enforce this with an owner or oracle role.
+* Requires a committed play-data hash before settlement, so proofs are tied to the exact match/event data used by the prover.
+* The mock verifier path has been removed. A real prover service and nonzero SP1 program verification key are required for new deployments.
+
+See [`docs/REAL_ZK_REFEREE.md`](docs/REAL_ZK_REFEREE.md) for the production proof/data pipeline contract.
 
 ---
 
@@ -123,8 +126,24 @@ Add these in **Vercel Project Settings → Environment Variables**:
 
 ```env
 VITE_REOWN_PROJECT_ID=your_reown_project_id_here
+VITE_ZK_PROVER_API_URL=https://your-prover-api.example.com
+VITE_ZK_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
+VITE_DISPUTE_REGISTRY_ADDRESS=0x0000000000000000000000000000000000000000
+VITE_PREDICTION_POOL_ADDRESS=0x0000000000000000000000000000000000000000
 VITE_HISTORY_START_BLOCK=30819655
 VITE_HISTORY_LOOKBACK_BLOCKS=1000
+```
+
+If `VITE_ZK_PROVER_API_URL` is unset, the frontend calls this app's Vercel serverless route at `/api/prove`.
+Configure these server-only variables in Vercel for that route:
+
+```env
+SPORTRADAR_API_KEY=your_sportradar_key_here
+SPORTRADAR_ACCESS_LEVEL=trial
+SPORTRADAR_LANGUAGE=en
+SPORTRADAR_FORMAT=json
+SPORTRADAR_SPORT_EVENT_MAP={"101":"sr:sport_event:00000000"}
+SP1_PROVER_URL=https://your-sp1-prover.example.com
 ```
 
 Do **not** add `PRIVATE_KEY` to Vercel for the frontend deployment. `PRIVATE_KEY`, `RPC_URL`, and `RPC_FALLBACK_URL` are only used by local contract scripts such as `initialize.js` and `query.js`.
@@ -155,7 +174,19 @@ Create a `.env` file in the root directory:
 PRIVATE_KEY=your_deployer_private_key_here
 RPC_URL=https://testrpc.xlayer.tech/terigon
 RPC_FALLBACK_URL=https://xlayertestrpc.okx.com/terigon
+SP1_VERIFIER=0x0000000000000000000000000000000000000000
+SP1_PROGRAM_VKEY=0x0000000000000000000000000000000000000000000000000000000000000000
 VITE_REOWN_PROJECT_ID=your_reown_project_id_here
+VITE_ZK_PROVER_API_URL=https://your-prover-api.example.com
+SPORTRADAR_API_KEY=your_sportradar_key_here
+SPORTRADAR_ACCESS_LEVEL=trial
+SPORTRADAR_LANGUAGE=en
+SPORTRADAR_FORMAT=json
+SPORTRADAR_SPORT_EVENT_MAP={"101":"sr:sport_event:00000000"}
+SP1_PROVER_URL=https://your-sp1-prover.example.com
+VITE_ZK_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
+VITE_DISPUTE_REGISTRY_ADDRESS=0x0000000000000000000000000000000000000000
+VITE_PREDICTION_POOL_ADDRESS=0x0000000000000000000000000000000000000000
 
 # Optional history scan tuning for the deployed contracts
 VITE_HISTORY_START_BLOCK=30819655
@@ -209,8 +240,9 @@ Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConn
 
 ### Step 4: Generate the ZK-VAR Proof
 * Normal users do not trigger final resolution. They can stake predictions, vote in the tribunal, and claim after settlement.
-* The contract owner/oracle wallet opens the **Tribunal** flow and triggers the **ZK-AI Referee** for the selected World Cup play.
-* The proof pipeline submits the verified verdict to `ZKVerifier.sol`, which resolves the dispute and prediction pool through the registry.
+* The contract owner/oracle wallet opens the **Tribunal** flow and triggers the **ZK Referee** for the selected World Cup play.
+* The frontend requests a real proof from `VITE_ZK_PROVER_API_URL`, commits the returned match-data hash on-chain, and submits the proof to `ZKVerifier.sol`.
+* `ZKVerifier.sol` verifies the proof through the configured SP1 verifier, then resolves the dispute and prediction pool through the registry.
 
 ### Step 5: Claim Rewards
 * Once verified, the dispute status updates to **ResolvedByZK** on-chain, and the prediction pool is settled.

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 interface ISP1Verifier {
-    function verify(
+    function verifyProof(
         bytes32 programVKey,
         bytes calldata publicValues,
         bytes calldata proofBytes
@@ -18,12 +18,12 @@ contract ZKVerifier {
     address public disputeRegistry;
     address public sp1Verifier;
     bytes32 public programVKey;
-    
-    bool public isMockEnabled;
+
+    mapping(uint256 => bytes32) public playDataHashes;
 
     event ProofVerified(uint256 indexed playId, bool isOffside, bytes32 programVKey);
-    event MockVerificationToggled(bool enabled);
     event ConfigUpdated(address sp1Verifier, bytes32 programVKey);
+    event PlayDataCommitted(uint256 indexed playId, bytes32 dataHash);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner");
@@ -31,10 +31,11 @@ contract ZKVerifier {
     }
 
     constructor(address _sp1Verifier, bytes32 _programVKey) {
+        require(_sp1Verifier != address(0), "Invalid SP1 verifier");
+        require(_programVKey != bytes32(0), "Invalid program vkey");
         owner = msg.sender;
         sp1Verifier = _sp1Verifier;
         programVKey = _programVKey;
-        isMockEnabled = true; // Default true for flexible local testing and hackathon demonstration
     }
 
     function setDisputeRegistry(address _disputeRegistry) external onlyOwner {
@@ -43,14 +44,18 @@ contract ZKVerifier {
     }
 
     function updateConfig(address _sp1Verifier, bytes32 _programVKey) external onlyOwner {
+        require(_sp1Verifier != address(0), "Invalid SP1 verifier");
+        require(_programVKey != bytes32(0), "Invalid program vkey");
         sp1Verifier = _sp1Verifier;
         programVKey = _programVKey;
         emit ConfigUpdated(_sp1Verifier, _programVKey);
     }
 
-    function toggleMockVerification(bool _enabled) external onlyOwner {
-        isMockEnabled = _enabled;
-        emit MockVerificationToggled(_enabled);
+    function commitPlayData(uint256 playId, bytes32 dataHash) external onlyOwner {
+        require(dataHash != bytes32(0), "Invalid data hash");
+        require(playDataHashes[playId] == bytes32(0), "Play data already committed");
+        playDataHashes[playId] = dataHash;
+        emit PlayDataCommitted(playId, dataHash);
     }
 
     /**
@@ -67,21 +72,19 @@ contract ZKVerifier {
         bytes calldata proofBytes
     ) external {
         require(disputeRegistry != address(0), "Dispute registry not set");
+        require(proofBytes.length > 0, "Proof bytes required");
 
-        if (isMockEnabled) {
-            // Under mock mode, we simulate verification for presentation and initial deployment purposes
-            // This allows the dapp to be fully functional on X Layer Testnet immediately
-            emit ProofVerified(playId, isOffside, programVKey);
-        } else {
-            // Decode and validate that public values match the transaction inputs
-            (uint256 decodedPlayId, bool decodedIsOffside) = abi.decode(publicValues, (uint256, bool));
-            require(decodedPlayId == playId, "Play ID mismatch");
-            require(decodedIsOffside == isOffside, "Offside verdict mismatch");
+        // Decode and validate that public values match the transaction inputs and committed data.
+        (uint256 decodedPlayId, bool decodedIsOffside, bytes32 decodedDataHash) =
+            abi.decode(publicValues, (uint256, bool, bytes32));
+        require(decodedPlayId == playId, "Play ID mismatch");
+        require(decodedIsOffside == isOffside, "Offside verdict mismatch");
+        require(decodedDataHash != bytes32(0), "Invalid public data hash");
+        require(playDataHashes[playId] == decodedDataHash, "Uncommitted play data");
 
-            // Perform actual verification via Succinct's SP1 Verifier contract
-            ISP1Verifier(sp1Verifier).verify(programVKey, publicValues, proofBytes);
-            emit ProofVerified(playId, isOffside, programVKey);
-        }
+        // Perform actual verification via Succinct's SP1 Verifier contract.
+        ISP1Verifier(sp1Verifier).verifyProof(programVKey, publicValues, proofBytes);
+        emit ProofVerified(playId, isOffside, programVKey);
 
         // Call the dispute registry to resolve the controversy using the verified ZK-AI verdict
         IDisputeRegistry(disputeRegistry).resolveFromVerifier(playId, isOffside);

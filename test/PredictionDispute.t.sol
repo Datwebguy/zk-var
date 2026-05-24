@@ -6,6 +6,22 @@ import "../contracts/DisputeRegistry.sol";
 import "../contracts/PredictionPool.sol";
 import "../contracts/ZKVerifier.sol";
 
+contract MockSP1Verifier {
+    bool public shouldRevert;
+
+    function setShouldRevert(bool _shouldRevert) external {
+        shouldRevert = _shouldRevert;
+    }
+
+    function verifyProof(
+        bytes32,
+        bytes calldata,
+        bytes calldata
+    ) external view {
+        require(!shouldRevert, "SP1 verification failed");
+    }
+}
+
 // Malicious contract to attempt reentrancy on claimJuryRewards
 contract MaliciousJuryAttacker {
     DisputeRegistry public registry;
@@ -65,6 +81,7 @@ contract PredictionDisputeTest is Test {
     DisputeRegistry public disputeRegistry;
     PredictionPool public predictionPool;
     ZKVerifier public zkVerifier;
+    MockSP1Verifier public mockSP1Verifier;
 
     address public owner = address(10);
     address public alice = address(11);
@@ -76,7 +93,8 @@ contract PredictionDisputeTest is Test {
         vm.startPrank(owner);
 
         // Deploy contracts
-        zkVerifier = new ZKVerifier(address(0x123), bytes32(0));
+        mockSP1Verifier = new MockSP1Verifier();
+        zkVerifier = new ZKVerifier(address(mockSP1Verifier), bytes32(uint256(1)));
         disputeRegistry = new DisputeRegistry();
         predictionPool = new PredictionPool();
 
@@ -305,5 +323,89 @@ contract PredictionDisputeTest is Test {
 
         // Unclaimed jury funds = 10 ether total. All 10 ether should be returned to owner.
         assertEq(owner.balance - ownerBalBefore, 10 ether);
+    }
+
+    function testZKVerifierRejectsInvalidConstructorConfig() public {
+        vm.expectRevert("Invalid SP1 verifier");
+        new ZKVerifier(address(0), bytes32(uint256(1)));
+
+        vm.expectRevert("Invalid program vkey");
+        new ZKVerifier(address(mockSP1Verifier), bytes32(0));
+    }
+
+    function testZKVerifierRequiresCommittedPlayData() public {
+        uint256 playId = 101;
+        uint256 poolId = 1;
+        bytes32 dataHash = keccak256("official-match-feed-event-101");
+        bytes memory publicValues = abi.encode(playId, true, dataHash);
+        bytes memory proofBytes = hex"1234";
+
+        vm.startPrank(owner);
+        predictionPool.createPool(poolId, "Was the attacker offside?", 1 hours);
+        disputeRegistry.createDispute(playId, poolId, "Offside dispute", 1 hours);
+        vm.stopPrank();
+
+        vm.expectRevert("Uncommitted play data");
+        zkVerifier.verifyPlayProof(playId, true, publicValues, proofBytes);
+    }
+
+    function testZKVerifierRejectsEmptyProofBytes() public {
+        uint256 playId = 101;
+        bytes32 dataHash = keccak256("official-match-feed-event-101");
+        bytes memory publicValues = abi.encode(playId, true, dataHash);
+
+        vm.prank(owner);
+        zkVerifier.commitPlayData(playId, dataHash);
+
+        vm.expectRevert("Proof bytes required");
+        zkVerifier.verifyPlayProof(playId, true, publicValues, "");
+    }
+
+    function testZKVerifierRejectsMismatchedPublicValues() public {
+        uint256 playId = 101;
+        bytes32 dataHash = keccak256("official-match-feed-event-101");
+        bytes memory wrongPlayValues = abi.encode(uint256(102), true, dataHash);
+        bytes memory wrongVerdictValues = abi.encode(playId, false, dataHash);
+        bytes memory proofBytes = hex"1234";
+
+        vm.prank(owner);
+        zkVerifier.commitPlayData(playId, dataHash);
+
+        vm.expectRevert("Play ID mismatch");
+        zkVerifier.verifyPlayProof(playId, true, wrongPlayValues, proofBytes);
+
+        vm.expectRevert("Offside verdict mismatch");
+        zkVerifier.verifyPlayProof(playId, true, wrongVerdictValues, proofBytes);
+    }
+
+    function testZKVerifierResolvesOnlyAfterSP1Verification() public {
+        uint256 playId = 101;
+        uint256 poolId = 1;
+        bytes32 dataHash = keccak256("official-match-feed-event-101");
+        bytes memory publicValues = abi.encode(playId, true, dataHash);
+        bytes memory proofBytes = hex"1234";
+
+        vm.startPrank(owner);
+        predictionPool.createPool(poolId, "Was the attacker offside?", 1 hours);
+        disputeRegistry.createDispute(playId, poolId, "Offside dispute", 1 hours);
+        zkVerifier.commitPlayData(playId, dataHash);
+        vm.stopPrank();
+
+        mockSP1Verifier.setShouldRevert(true);
+        vm.expectRevert("SP1 verification failed");
+        zkVerifier.verifyPlayProof(playId, true, publicValues, proofBytes);
+
+        mockSP1Verifier.setShouldRevert(false);
+        zkVerifier.verifyPlayProof(playId, true, publicValues, proofBytes);
+
+        (, , , DisputeRegistry.DisputeStatus disputeStatus, , , , , DisputeRegistry.VoteChoice verdict, ) =
+            disputeRegistry.getDisputeDetails(playId);
+        (, , PredictionPool.PoolStatus poolStatus, uint8 winningOutcome, , , , ) =
+            predictionPool.getPoolDetails(poolId);
+
+        assertEq(uint8(disputeStatus), uint8(DisputeRegistry.DisputeStatus.ResolvedByZK));
+        assertEq(uint8(verdict), uint8(DisputeRegistry.VoteChoice.Valid));
+        assertEq(uint8(poolStatus), uint8(PredictionPool.PoolStatus.Resolved));
+        assertEq(winningOutcome, 1);
     }
 }

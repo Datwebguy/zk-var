@@ -2,9 +2,9 @@ import { ethers } from 'ethers';
 
 // These are placeholder addresses that are populated after deployment on X Layer Testnet
 export const CONTRACT_ADDRESSES = {
-  ZKVerifier: "0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296",
-  DisputeRegistry: "0x1F9a7E49D0339A53e47857D0D032121764058eF7",
-  PredictionPool: "0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F"
+  ZKVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS || "0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296",
+  DisputeRegistry: import.meta.env.VITE_DISPUTE_REGISTRY_ADDRESS || "0x1F9a7E49D0339A53e47857D0D032121764058eF7",
+  PredictionPool: import.meta.env.VITE_PREDICTION_POOL_ADDRESS || "0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F"
 };
 
 export const XLAYER_CHAIN_ID = 1952;
@@ -18,13 +18,13 @@ export const ZK_VERIFIER_ABI = [
   "function disputeRegistry() view returns (address)",
   "function sp1Verifier() view returns (address)",
   "function programVKey() view returns (bytes32)",
-  "function isMockEnabled() view returns (bool)",
+  "function playDataHashes(uint256 playId) view returns (bytes32)",
   "function verifyPlayProof(uint256 playId, bool isOffside, bytes calldata publicValues, bytes calldata proofBytes) external",
   "function setDisputeRegistry(address _disputeRegistry) external",
   "function updateConfig(address _sp1Verifier, bytes32 _programVKey) external",
-  "function toggleMockVerification(bool _enabled) external",
+  "function commitPlayData(uint256 playId, bytes32 dataHash) external",
   "event ProofVerified(uint256 indexed playId, bool isOffside, bytes32 programVKey)",
-  "event MockVerificationToggled(bool enabled)"
+  "event PlayDataCommitted(uint256 indexed playId, bytes32 dataHash)"
 ];
 
 export const DISPUTE_REGISTRY_ABI = [

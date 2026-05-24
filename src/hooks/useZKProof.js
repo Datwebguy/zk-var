@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { encodePublicValues, generateMockProofBytes } from '../utils/zkHelpers';
+import { getSP1ProofLogs, requestZKProof } from '../utils/zkHelpers';
 import { CONTRACT_ADDRESSES, ZK_VERIFIER_ABI, decodeContractError, getWeb3Provider, logRpcError } from '../utils/contractHelpers';
 import { ethers } from 'ethers';
 
@@ -22,7 +22,7 @@ export const useZKProof = () => {
 
   const [txLoading, setTxLoading] = useState(false);
 
-  const generateAndVerifyProof = useCallback(async (playId, isOffside, onComplete) => {
+  const generateAndVerifyProof = useCallback(async (playId, onComplete) => {
     if (isZKProving) return;
 
     if (!walletConnected) {
@@ -41,40 +41,61 @@ export const useZKProof = () => {
       return;
     }
 
-    const verifyTxFn = async (simulatedHash, addLogLine) => {
+    const proveAndVerifyFn = async (addLogLine) => {
       setTxLoading(true);
-      addLogLine('[SYSTEM] Broadcasting ZK proof payload to ZKVerifier.sol on X Layer...');
-      addLogLine('[SYSTEM] Awaiting signature in Web3 wallet...');
+      addLogLine('[PROVER] Requesting real SP1 proof from configured prover service...');
 
       let contract = null;
       try {
+        const proof = await requestZKProof({ playId });
+        getSP1ProofLogs(playId, proof).forEach(addLogLine);
+
         const browserProvider = getWeb3Provider(walletType);
         if (!browserProvider) throw new Error('Web3 provider missing.');
 
         const signer = await browserProvider.getSigner();
         contract = new ethers.Contract(CONTRACT_ADDRESSES.ZKVerifier, ZK_VERIFIER_ABI, signer);
 
-        const publicValues = encodePublicValues(playId, isOffside);
-        const proofBytes = generateMockProofBytes();
+        const committedDataHash = await contract.playDataHashes(playId);
+        if (committedDataHash === ethers.ZeroHash) {
+          addLogLine('[SYSTEM] Committing match data hash before proof verification...');
+          const commitTx = await contract.commitPlayData(playId, proof.dataHash);
+          addLogLine(`[SYSTEM] Data commitment broadcasted! Hash: ${commitTx.hash}`);
+          await commitTx.wait();
+          addLogLine('[SYSTEM] Match data commitment confirmed on X Layer.');
+        } else if (committedDataHash.toLowerCase() !== proof.dataHash.toLowerCase()) {
+          throw new Error('On-chain play data hash does not match prover output.');
+        } else {
+          addLogLine('[SYSTEM] Existing on-chain data commitment matches prover output.');
+        }
 
-        console.log('[ZK TRANSACTION] verifyPlayProof wallet-native payload:', {
+        addLogLine('[SYSTEM] Broadcasting proof payload to ZKVerifier.sol on X Layer...');
+        addLogLine('[SYSTEM] Awaiting signature in Web3 wallet...');
+
+        console.log('[ZK TRANSACTION] verifyPlayProof real proof payload:', {
           to: CONTRACT_ADDRESSES.ZKVerifier,
           playId,
-          isOffside
+          isOffside: proof.isOffside,
+          dataHash: proof.dataHash
         });
 
-        const tx = await contract.verifyPlayProof(playId, isOffside, publicValues, proofBytes);
+        const tx = await contract.verifyPlayProof(
+          playId,
+          proof.isOffside,
+          proof.publicValues,
+          proof.proofBytes
+        );
 
         addLogLine(`[SYSTEM] Transaction broadcasted! Hash: ${tx.hash}`);
         addLogLine('[SYSTEM] Awaiting block confirmation on X Layer...');
         await tx.wait();
 
-        addLogLine('[ZK-VERIFIER] On-Chain ZK Proof verified successfully via ISP1Verifier!');
+        addLogLine('[ZK-VERIFIER] On-chain SP1 proof verification succeeded.');
         addLogLine(`[DISPUTE-REGISTRY] playId=${playId} status updated to ResolvedByZK.`);
-        addLogLine(`[PREDICTION-POOL] poolId=${playId - 100} resolved with outcome ${isOffside ? 'Yes/Valid' : 'No/Invalid'}.`);
+        addLogLine(`[PREDICTION-POOL] poolId=${playId - 100} resolved with outcome ${proof.isOffside ? 'Yes/Valid' : 'No/Invalid'}.`);
 
-        if (onComplete) onComplete(tx.hash);
-        return tx.hash;
+        if (onComplete) onComplete(tx.hash, proof);
+        return { txHash: tx.hash, isOffside: proof.isOffside };
       } catch (error) {
         logRpcError('ZK verification contract transaction failed', error);
         throw new Error(decodeContractError(error, contract?.interface), { cause: error });
@@ -83,7 +104,7 @@ export const useZKProof = () => {
       }
     };
 
-    startZKProofPipeline(playId, isOffside, verifyTxFn);
+    startZKProofPipeline(playId, proveAndVerifyFn);
   }, [isZKProving, walletConnected, userAddress, contractOwner, walletType, startZKProofPipeline, addNotification]);
 
   return {
