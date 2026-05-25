@@ -5,7 +5,13 @@ use sp1_sdk::{
     blocking::{ProveRequest, Prover, ProverClient},
     include_elf, Elf, SP1Stdin,
 };
-use std::{env, net::SocketAddr, sync::mpsc, thread};
+use std::{
+    env,
+    net::SocketAddr,
+    panic::{catch_unwind, AssertUnwindSafe},
+    sync::mpsc,
+    thread,
+};
 use zk_var_lib::PublicValuesStruct;
 
 const ZK_VAR_ELF: Elf = include_elf!("zk-var-program");
@@ -61,7 +67,10 @@ async fn prove(
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        let result = prove_on_current_thread(play_id, is_offside, stdin);
+        let result = catch_unwind(AssertUnwindSafe(|| {
+            prove_on_current_thread(play_id, is_offside, stdin)
+        }))
+        .unwrap_or_else(|panic| Err(format!("proof worker panicked: {}", panic_message(panic))));
         let _ = tx.send(result);
     });
 
@@ -74,6 +83,16 @@ async fn prove(
     .map_err(|error| error.to_string())?;
 
     Ok(Json(response))
+}
+
+fn panic_message(panic: Box<dyn std::any::Any + Send>) -> String {
+    if let Some(message) = panic.downcast_ref::<String>() {
+        return message.clone();
+    }
+    if let Some(message) = panic.downcast_ref::<&str>() {
+        return message.to_string();
+    }
+    "unknown panic".to_string()
 }
 
 fn prove_on_current_thread(
