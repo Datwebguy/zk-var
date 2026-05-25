@@ -1,0 +1,34 @@
+[package]
+version = "0.1.0"
+name = "zk-var-script"
+edition = "2021"
+default-run = "zk-var-prover"
+
+[[bin]]
+name = "zk-var-prover"
+path = "src/bin/main.rs"
+
+[[bin]]
+name = "server"
+path = "src/bin/server.rs"
+
+[[bin]]
+name = "vkey"
+path = "src/bin/vkey.rs"
+
+[dependencies]
+alloy-sol-types = { workspace = true }
+axum = "0.7"
+clap = { version = "4.0", features = ["derive", "env"] }
+dotenv = "0.15.0"
+hex = "0.4.3"
+indexmap = { version = "1.9.3", features = ["std"] }
+serde = { version = "1.0.200", features = ["derive"] }
+serde_json = "1.0"
+sp1-sdk = { version = "6.0.1", features = ["blocking", "native-gnark"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.40"
+zk-var-lib = { path = "../lib" }
+
+[build-dependencies]
+sp1-build = { version = "6.0.1" }

@@ -1,0 +1,8 @@
+[package]
+version = "0.1.0"
+name = "zk-var-lib"
+edition = "2021"
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }

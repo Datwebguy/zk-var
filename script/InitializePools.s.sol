@@ -9,8 +9,8 @@ contract InitializePoolsScript is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
-        address predictionPoolAddress = 0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F;
-        address disputeRegistryAddress = 0x1F9a7E49D0339A53e47857D0D032121764058eF7;
+        address predictionPoolAddress = vm.envAddress("VITE_PREDICTION_POOL_ADDRESS");
+        address disputeRegistryAddress = vm.envAddress("VITE_DISPUTE_REGISTRY_ADDRESS");
 
         vm.startBroadcast(deployerPrivateKey);
 

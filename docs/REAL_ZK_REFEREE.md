@@ -52,6 +52,8 @@ nonzero SP1 program verification key.
 - SP1 guest program source and generated `SP1_PROGRAM_VKEY`.
 - Sportradar API key and `SPORTRADAR_SPORT_EVENT_MAP` play-to-match mapping.
 - Prover backend deployment URL for `SP1_PROVER_URL`.
+- Linux/WSL2/Docker host for the SP1 prover. The SP1 SDK does not compile as a native
+  Windows prover in this project because its JIT/shared-memory dependencies are Unix-oriented.
 - Fresh contract deployment addresses after replacing the old mock-enabled verifier.
 - Vercel environment variables updated to point to the prover API and new contracts:
   `VITE_ZK_VERIFIER_ADDRESS`, `VITE_DISPUTE_REGISTRY_ADDRESS`, and

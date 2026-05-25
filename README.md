@@ -36,9 +36,10 @@ All smart contracts are fully open-source, compiled, and deployed on the **X Lay
 
 | Contract Name | Deployed Address | Explorer Link |
 | :--- | :--- | :--- |
-| **PredictionPool.sol** | `0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F) |
-| **DisputeRegistry.sol**| `0x1F9a7E49D0339A53e47857D0D032121764058eF7` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x1F9a7E49D0339A53e47857D0D032121764058eF7) |
-| **ZKVerifier.sol**     | `0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296) |
+| **PredictionPool.sol** | `0x18a2d7c02e8f44dda3498dec63cb770da78f7a9e` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x18a2d7c02e8f44dda3498dec63cb770da78f7a9e) |
+| **DisputeRegistry.sol**| `0xa3eadc2ffed327f1e8f9a62ac4f100000aed4c7a` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0xa3eadc2ffed327f1e8f9a62ac4f100000aed4c7a) |
+| **ZKVerifier.sol**     | `0x977f25bbff3180a85e5160a0c2fb0aba431935bd` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x977f25bbff3180a85e5160a0c2fb0aba431935bd) |
+| **SP1 Verifier Gateway** | `0xe624B37fA01d31322386a7D29580Adac82440A11` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0xe624B37fA01d31322386a7D29580Adac82440A11) |
 
 ---
 

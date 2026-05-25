@@ -2,9 +2,9 @@ import { ethers } from 'ethers';
 
 // These are placeholder addresses that are populated after deployment on X Layer Testnet
 export const CONTRACT_ADDRESSES = {
-  ZKVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS || "0x5506A30112A86aEBAAD9bbF2093A4E36eFf89296",
-  DisputeRegistry: import.meta.env.VITE_DISPUTE_REGISTRY_ADDRESS || "0x1F9a7E49D0339A53e47857D0D032121764058eF7",
-  PredictionPool: import.meta.env.VITE_PREDICTION_POOL_ADDRESS || "0x1cFa3a209a85BC7E5731bf160E8E1826A6f7727F"
+  ZKVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS || "0x977f25bbff3180a85e5160a0c2fb0aba431935bd",
+  DisputeRegistry: import.meta.env.VITE_DISPUTE_REGISTRY_ADDRESS || "0xa3eadc2ffed327f1e8f9a62ac4f100000aed4c7a",
+  PredictionPool: import.meta.env.VITE_PREDICTION_POOL_ADDRESS || "0x18a2d7c02e8f44dda3498dec63cb770da78f7a9e"
 };
 
 export const XLAYER_CHAIN_ID = 1952;
