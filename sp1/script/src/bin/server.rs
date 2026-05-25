@@ -3,16 +3,16 @@ use axum::{extract::State, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use sp1_sdk::{
     blocking::{ProveRequest, Prover, ProverClient},
-    include_elf, Elf, HashableKey, ProvingKey, SP1Stdin,
+    include_elf, Elf, HashableKey, SP1Stdin,
 };
-use std::{env, net::SocketAddr, sync::Arc};
+use std::{env, net::SocketAddr};
+use zk_var_lib::PublicValuesStruct;
 
 const ZK_VAR_ELF: Elf = include_elf!("zk-var-program");
 
 #[derive(Clone)]
 struct AppState {
     vkey: String,
-    pk: Arc<ProvingKey>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -49,25 +49,28 @@ fn stdin_for(play_id: u64, is_offside: bool, data_hash: [u8; 32]) -> SP1Stdin {
 }
 
 async fn prove(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
     Json(body): Json<ProveRequestBody>,
 ) -> Result<Json<ProveResponseBody>, String> {
     let data_hash = decode_data_hash(&body.data_hash)?;
     let stdin = stdin_for(body.play_id, body.is_offside, data_hash);
-    let pk = state.pk.clone();
 
-    let proof = tokio::task::spawn_blocking(move || {
+    let proof = tokio::task::spawn_blocking(move || -> Result<_, String> {
         let client = ProverClient::from_env();
+        let pk = client
+            .setup(ZK_VAR_ELF)
+            .map_err(|error| error.to_string())?;
         client.prove(&pk, stdin).groth16().run()
+            .map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| error.to_string())?
     .map_err(|error| error.to_string())?;
 
     let public_values = proof.public_values.as_slice();
-    let decoded = zk_var_lib::PublicValuesStruct::abi_decode(public_values)
-        .map_err(|error| error.to_string())?;
-    if decoded.playId != alloy_primitives::U256::from(body.play_id) {
+    let decoded =
+        PublicValuesStruct::abi_decode(public_values).map_err(|error| error.to_string())?;
+    if decoded.playId.to_string() != body.play_id.to_string() {
         return Err("proof public playId mismatch".to_string());
     }
     if decoded.isOffside != body.is_offside {
@@ -89,7 +92,6 @@ async fn main() {
     let pk = client.setup(ZK_VAR_ELF).expect("failed to setup elf");
     let state = AppState {
         vkey: pk.verifying_key().bytes32().to_string(),
-        pk: Arc::new(pk),
     };
     println!("ZK-VAR SP1 program vkey: {}", state.vkey);
 
