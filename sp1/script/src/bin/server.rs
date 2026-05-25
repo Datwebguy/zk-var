@@ -5,7 +5,7 @@ use sp1_sdk::{
     blocking::{ProveRequest, Prover, ProverClient},
     include_elf, Elf, HashableKey, ProvingKey, SP1Stdin,
 };
-use std::{env, net::SocketAddr};
+use std::{env, net::SocketAddr, sync::mpsc, thread};
 use zk_var_lib::PublicValuesStruct;
 
 const ZK_VAR_ELF: Elf = include_elf!("zk-var-program");
@@ -54,37 +54,58 @@ async fn prove(
 ) -> Result<Json<ProveResponseBody>, String> {
     let data_hash = decode_data_hash(&body.data_hash)?;
     let stdin = stdin_for(body.play_id, body.is_offside, data_hash);
+    let play_id = body.play_id;
+    let is_offside = body.is_offside;
+    let (tx, rx) = mpsc::channel();
 
-    let proof = tokio::task::spawn_blocking(move || -> Result<_, String> {
-        let client = ProverClient::from_env();
-        let pk = client
-            .setup(ZK_VAR_ELF)
-            .map_err(|error| error.to_string())?;
-        client.prove(&pk, stdin).groth16().run()
-            .map_err(|error| error.to_string())
+    thread::spawn(move || {
+        let result = prove_on_current_thread(play_id, is_offside, stdin);
+        let _ = tx.send(result);
+    });
+
+    let response = tokio::task::spawn_blocking(move || {
+        rx.recv()
+            .map_err(|error| format!("proof worker failed: {error}"))?
     })
     .await
     .map_err(|error| error.to_string())?
     .map_err(|error| error.to_string())?;
 
+    Ok(Json(response))
+}
+
+fn prove_on_current_thread(
+    play_id: u64,
+    is_offside: bool,
+    stdin: SP1Stdin,
+) -> Result<ProveResponseBody, String> {
+    let client = ProverClient::from_env();
+    let pk = client
+        .setup(ZK_VAR_ELF)
+        .map_err(|error| error.to_string())?;
+    let proof = client
+        .prove(&pk, stdin)
+        .groth16()
+        .run()
+        .map_err(|error| error.to_string())?;
+
     let public_values = proof.public_values.as_slice();
     let decoded =
         PublicValuesStruct::abi_decode(public_values).map_err(|error| error.to_string())?;
-    if decoded.playId.to_string() != body.play_id.to_string() {
+    if decoded.playId.to_string() != play_id.to_string() {
         return Err("proof public playId mismatch".to_string());
     }
-    if decoded.isOffside != body.is_offside {
+    if decoded.isOffside != is_offside {
         return Err("proof public isOffside mismatch".to_string());
     }
 
-    Ok(Json(ProveResponseBody {
+    Ok(ProveResponseBody {
         public_values: format!("0x{}", hex::encode(public_values)),
         proof_bytes: format!("0x{}", hex::encode(proof.bytes())),
-    }))
+    })
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     sp1_sdk::utils::setup_logger();
     dotenv::dotenv().ok();
 
@@ -99,8 +120,15 @@ async fn main() {
     let port = env::var("ZK_VAR_PROVER_PORT").unwrap_or_else(|_| "8080".to_string());
     let addr: SocketAddr = format!("{host}:{port}").parse().expect("invalid bind address");
 
-    let app = Router::new().route("/prove", post(prove)).with_state(state);
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    println!("ZK-VAR SP1 prover listening on http://{addr}");
-    axum::serve(listener, app).await.unwrap();
+    let runtime = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .expect("failed to create tokio runtime");
+
+    runtime.block_on(async move {
+        let app = Router::new().route("/prove", post(prove)).with_state(state);
+        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+        println!("ZK-VAR SP1 prover listening on http://{addr}");
+        axum::serve(listener, app).await.unwrap();
+    });
 }
