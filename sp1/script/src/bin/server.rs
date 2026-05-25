@@ -1,9 +1,9 @@
 use alloy_sol_types::SolType;
-use axum::{extract::State, routing::post, Json, Router};
+use axum::{extract::State, routing::{get, post}, Json, Router};
 use serde::{Deserialize, Serialize};
 use sp1_sdk::{
     blocking::{ProveRequest, Prover, ProverClient},
-    include_elf, Elf, HashableKey, ProvingKey, SP1Stdin,
+    include_elf, Elf, SP1Stdin,
 };
 use std::{env, net::SocketAddr, sync::mpsc, thread};
 use zk_var_lib::PublicValuesStruct;
@@ -11,9 +11,7 @@ use zk_var_lib::PublicValuesStruct;
 const ZK_VAR_ELF: Elf = include_elf!("zk-var-program");
 
 #[derive(Clone)]
-struct AppState {
-    vkey: String,
-}
+struct AppState;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -46,6 +44,10 @@ fn stdin_for(play_id: u64, is_offside: bool, data_hash: [u8; 32]) -> SP1Stdin {
     stdin.write(&is_offside);
     stdin.write(&data_hash);
     stdin
+}
+
+async fn health() -> &'static str {
+    "zk-var-sp1-prover: ok"
 }
 
 async fn prove(
@@ -109,16 +111,10 @@ fn main() {
     sp1_sdk::utils::setup_logger();
     dotenv::dotenv().ok();
 
-    let client = ProverClient::from_env();
-    let pk = client.setup(ZK_VAR_ELF).expect("failed to setup elf");
-    let state = AppState {
-        vkey: pk.verifying_key().bytes32().to_string(),
-    };
-    println!("ZK-VAR SP1 program vkey: {}", state.vkey);
-
     let host = env::var("ZK_VAR_PROVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let port = env::var("ZK_VAR_PROVER_PORT").unwrap_or_else(|_| "8080".to_string());
     let addr: SocketAddr = format!("{host}:{port}").parse().expect("invalid bind address");
+    let state = AppState;
 
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
@@ -126,7 +122,11 @@ fn main() {
         .expect("failed to create tokio runtime");
 
     runtime.block_on(async move {
-        let app = Router::new().route("/prove", post(prove)).with_state(state);
+        let app = Router::new()
+            .route("/", get(health))
+            .route("/health", get(health))
+            .route("/prove", post(prove))
+            .with_state(state);
         let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
         println!("ZK-VAR SP1 prover listening on http://{addr}");
         axum::serve(listener, app).await.unwrap();
