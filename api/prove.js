@@ -116,7 +116,11 @@ const requestProofFromBackend = async ({ playId, isOffside, dataHash, timeline }
     throw new Error(`SP1 prover request failed with HTTP ${response.status}: ${bodyText}`);
   }
 
-  return JSON.parse(bodyText);
+  try {
+    return JSON.parse(bodyText);
+  } catch {
+    throw new Error(`SP1 prover returned non-JSON response with HTTP ${response.status}: ${bodyText}`);
+  }
 };
 
 export default async function handler(req, res) {

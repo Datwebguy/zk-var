@@ -1,5 +1,10 @@
 use alloy_sol_types::SolType;
-use axum::{extract::State, routing::{get, post}, Json, Router};
+use axum::{
+    extract::State,
+    http::StatusCode,
+    routing::{get, post},
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 use sp1_sdk::{
     blocking::{ProveRequest, Prover, ProverClient},
@@ -59,8 +64,9 @@ async fn health() -> &'static str {
 async fn prove(
     State(_state): State<AppState>,
     Json(body): Json<ProveRequestBody>,
-) -> Result<Json<ProveResponseBody>, String> {
-    let data_hash = decode_data_hash(&body.data_hash)?;
+) -> Result<Json<ProveResponseBody>, (StatusCode, String)> {
+    let data_hash = decode_data_hash(&body.data_hash)
+        .map_err(|error| (StatusCode::BAD_REQUEST, error))?;
     let stdin = stdin_for(body.play_id, body.is_offside, data_hash);
     let play_id = body.play_id;
     let is_offside = body.is_offside;
@@ -79,8 +85,8 @@ async fn prove(
             .map_err(|error| format!("proof worker failed: {error}"))?
     })
     .await
-    .map_err(|error| error.to_string())?
-    .map_err(|error| error.to_string())?;
+    .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?
+    .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
 
     Ok(Json(response))
 }
