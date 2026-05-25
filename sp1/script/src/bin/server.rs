@@ -3,7 +3,7 @@ use axum::{extract::State, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use sp1_sdk::{
     blocking::{ProveRequest, Prover, ProverClient},
-    include_elf, Elf, HashableKey, SP1Stdin,
+    include_elf, Elf, HashableKey, ProvingKey, SP1Stdin,
 };
 use std::{env, net::SocketAddr};
 use zk_var_lib::PublicValuesStruct;
