@@ -215,7 +215,7 @@ function App() {
               <ShieldAlert className="text-[#FFD60A] shrink-0" size={18} />
               <div className="warning-banner-text">
                 <p>
-                  <strong className="text-[#FFD60A]">VAR REVIEW ACTIVE:</strong> Play ID #{activePlayId} is selected for review. Jury consensus can form here.
+                  <strong className="text-[#FFD60A]">VAR REVIEW ACTIVE:</strong> Play ID #{activePlayId} is selected for review. Tribunal voting is optional; market claims settle through the linked prediction pool.
                 </p>
                 <span className="text-glow-cyan text-[#00F5FF] shrink-0 font-bold ml-2">
                   SP1 VERIFIER CONTRACT ONLINE

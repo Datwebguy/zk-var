@@ -3,7 +3,7 @@ import { usePrediction } from '../hooks/usePrediction';
 import { useZKProof } from '../hooks/useZKProof';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../store/useAppStore';
-import { DEFAULT_PROVEN_PLAY_ID, PROVEN_WORLD_CUP_PLAY_IDS } from '../config/provenMarkets';
+import { DEFAULT_PROVEN_PLAY_ID, PROVEN_WORLD_CUP_PLAY_IDS, getProvenMarketByPlayId } from '../config/provenMarkets';
 import { Shield, Sparkles, Scale, Info, HelpCircle } from 'lucide-react';
 
 export const JuryVote = ({ activePlayId = DEFAULT_PROVEN_PLAY_ID }) => {
@@ -19,6 +19,7 @@ export const JuryVote = ({ activePlayId = DEFAULT_PROVEN_PLAY_ID }) => {
   const visibleDisputes = disputes.filter((disputeRecord) => provenPlayIds.has(Number(disputeRecord.playId)));
   const dispute = visibleDisputes.find(d => d.playId === activePlayId) || visibleDisputes[0];
   const selectedPlayId = dispute?.playId ?? activePlayId;
+  const selectedMarket = getProvenMarketByPlayId(selectedPlayId);
   const userVote = dispute ? userDisputeVotes[dispute.playId] : null;
   const userVoteStake = parseFloat(userVote?.stake || '0') || 0;
   const userHasVote = userVoteStake > 0;
@@ -91,14 +92,16 @@ export const JuryVote = ({ activePlayId = DEFAULT_PROVEN_PLAY_ID }) => {
             </span>
           </div>
           <h3 className="font-heading font-bold text-lg text-white mb-2 leading-snug">
-            {dispute.description}
+            {selectedMarket?.question || dispute.description}
           </h3>
-          <p className="text-xs text-zinc-500 font-mono">
-            {isClosed 
-              ? 'This dispute is settled. Correct voters are eligible for rewards.'
-              : 'Staked votes establish the initial consensus. An SP1 proof can trigger final on-chain resolution.'
-            }
-          </p>
+          <div className="text-xs text-zinc-500 font-mono flex flex-col gap-1.5 leading-normal">
+            <p>{selectedMarket?.description || dispute.description}</p>
+            <p>
+              {isClosed
+                ? 'This dispute is settled. Market winners can claim from the Claim Center; correct jurors can claim jury rewards separately.'
+                : 'Jury voting is optional for predictors. Predictions are paid from the market after SP1 or jury resolution closes the linked pool.'}
+            </p>
+          </div>
         </div>
 
         {!isClosed && (

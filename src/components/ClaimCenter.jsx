@@ -220,13 +220,13 @@ export const ClaimCenter = () => {
           <div className="border border-zinc-800 rounded-lg bg-black/50 p-3 flex items-start gap-2">
             <Trophy size={14} className="text-[#A8FF35] mt-0.5 shrink-0" />
             <p className="text-3xs font-mono text-zinc-500 leading-relaxed">
-              Prediction markets use pool-share payouts. Winners split the pool by stake weight. If there is no opposing side, the market is refundable instead of profitable.
+              Prediction positions are claimed from the market pool after settlement. You do not need to vote in Tribunal to claim a winning prediction.
             </p>
           </div>
           <div className="border border-zinc-800 rounded-lg bg-black/50 p-3 flex items-start gap-2">
             <ShieldCheck size={14} className="text-[#00F5FF] mt-0.5 shrink-0" />
             <p className="text-3xs font-mono text-zinc-500 leading-relaxed">
-              Jury rewards use the same idea: correct voters split the jury pool, while inconclusive verdicts refund jury stakes.
+              Tribunal voting is a separate optional role. Correct jurors claim from the jury pool, while market winners claim from the prediction pool.
             </p>
           </div>
         </div>
