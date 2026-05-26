@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../store/useAppStore';
 import { Wallet, LogOut, X, CheckCircle, HelpCircle, Activity } from 'lucide-react';
-import { truncateAddress } from '../utils/contractHelpers';
+import { truncateAddress, XLAYER_CHAIN_ID } from '../utils/contractHelpers';
 
 export const WalletConnect = () => {
   const { walletConnected, userAddress, balance, chainId, connectWallet, disconnectWallet } = useWallet();
@@ -113,7 +113,7 @@ export const WalletConnect = () => {
                       <span className="wallet-hud-stat-label">NETWORK:</span>
                       <span className="wallet-hud-stat-val cyan">
                         <Activity size={10} className="animate-pulse" />
-                        {chainId === 1952 ? 'X Layer Test' : 'Unknown Chain'}
+                        {chainId === XLAYER_CHAIN_ID ? 'X Layer' : 'Unknown Chain'}
                       </span>
                     </div>
                   </div>
@@ -173,7 +173,7 @@ export const WalletConnect = () => {
               </p>
               {n.txHash && (
                 <a
-                  href={`https://www.okx.com/web3/explorer/xlayer-test/tx/${n.txHash}`}
+                  href={`https://www.okx.com/web3/explorer/xlayer/tx/${n.txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-3xs font-mono text-[#00F5FF] hover:underline pt-0.5"

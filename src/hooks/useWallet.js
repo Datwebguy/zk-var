@@ -4,7 +4,7 @@ import { useAccount, useBalance, useDisconnect, useSwitchChain } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
 import { useAppStore } from '../store/useAppStore';
 import { truncateAddress, XLAYER_RPC_URLS } from '../utils/contractHelpers';
-import { xLayerTestnet } from '../config/wagmi';
+import { xLayer } from '../config/wagmi';
 
 export const useWallet = () => {
   const { setWalletState, disconnectWallet: clearWalletState, addNotification } = useAppStore();
@@ -23,7 +23,7 @@ export const useWallet = () => {
     error: wagmiBalanceError
   } = useBalance({
     address,
-    chainId: xLayerTestnet.id,
+    chainId: xLayer.id,
     query: {
       enabled: Boolean(address)
     }
@@ -44,7 +44,7 @@ export const useWallet = () => {
 
       for (const rpcUrl of XLAYER_RPC_URLS) {
         try {
-          const provider = new ethers.JsonRpcProvider(rpcUrl, xLayerTestnet.id, {
+          const provider = new ethers.JsonRpcProvider(rpcUrl, xLayer.id, {
             staticNetwork: true
           });
           const rawBalance = await provider.getBalance(address);
@@ -100,7 +100,7 @@ export const useWallet = () => {
   );
   const balanceReady = Boolean(isConnected && resolvedBalance);
   const balanceError = wagmiBalanceError || fallbackBalanceError;
-  const isCorrectNetwork = chainId === xLayerTestnet.id;
+  const isCorrectNetwork = chainId === xLayer.id;
 
   useEffect(() => {
     setWalletState({
@@ -122,14 +122,14 @@ export const useWallet = () => {
   }, [open, addNotification]);
 
   const ensureXLayer = useCallback(async () => {
-    if (!isConnected || chainId === xLayerTestnet.id) return true;
+    if (!isConnected || chainId === xLayer.id) return true;
 
     try {
-      await switchChainAsync({ chainId: xLayerTestnet.id });
+      await switchChainAsync({ chainId: xLayer.id });
       return true;
     } catch (error) {
-      console.error('Failed to switch to X Layer Testnet:', error);
-      addNotification('error', 'Please switch your wallet to X Layer Testnet.');
+      console.error('Failed to switch to X Layer mainnet:', error);
+      addNotification('error', 'Please switch your wallet to X Layer mainnet.');
       return false;
     }
   }, [addNotification, chainId, isConnected, switchChainAsync]);

@@ -8,13 +8,13 @@ import {
   CONTRACT_ADDRESSES,
   PREDICTION_POOL_ABI,
   DISPUTE_REGISTRY_ABI,
+  XLAYER_CHAIN_ID,
   XLAYER_RPC_URLS,
   decodeContractError,
   formatEtherVal,
   logRpcError
 } from '../utils/contractHelpers';
 import { savePersonalTransaction } from '../utils/transactionHistory';
-import { xLayerTestnet } from '../config/wagmi';
 
 let cache = {
   pools: null,
@@ -315,8 +315,8 @@ export const usePrediction = () => {
     addNotification('pending', pendingMsg);
 
     try {
-      if (chainId !== xLayerTestnet.id) {
-        await switchChainAsync({ chainId: xLayerTestnet.id });
+      if (chainId !== XLAYER_CHAIN_ID) {
+        await switchChainAsync({ chainId: XLAYER_CHAIN_ID });
       }
 
       console.log(`[TRANSACTION] ${contractType}.${method}`, { args, value });
@@ -326,7 +326,7 @@ export const usePrediction = () => {
         functionName: method,
         args,
         value: value || undefined,
-        chainId: xLayerTestnet.id
+        chainId: XLAYER_CHAIN_ID
       });
 
       addNotification('pending', 'Transaction submitted. Awaiting confirmation...', hash);
@@ -341,7 +341,7 @@ export const usePrediction = () => {
 
       await waitForTransactionReceipt(config, {
         hash,
-        chainId: xLayerTestnet.id
+        chainId: XLAYER_CHAIN_ID
       });
 
       clearPredictionCache();

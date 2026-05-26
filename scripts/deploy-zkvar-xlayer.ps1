@@ -1,5 +1,6 @@
 param(
-  [string]$RpcUrl = "https://testrpc.xlayer.tech/terigon"
+  [string]$RpcUrl = "https://rpc.xlayer.tech",
+  [int]$ChainId = 196
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,13 +95,13 @@ if (Test-Path "$env:USERPROFILE\.foundry\bin\forge.exe") {
   $forge = "$env:USERPROFILE\.foundry\bin\forge.exe"
 }
 
-Write-Host "Deploying ZK-VAR contracts to X Layer testnet..."
+Write-Host "Deploying ZK-VAR contracts to X Layer mainnet..."
 & $forge script script/Deploy.s.sol --rpc-url $RpcUrl --broadcast
 if ($LASTEXITCODE -ne 0) {
   throw "ZK-VAR deployment failed."
 }
 
-$broadcastPath = Join-Path $repoRoot "broadcast\Deploy.s.sol\1952\run-latest.json"
+$broadcastPath = Join-Path $repoRoot "broadcast\Deploy.s.sol\$ChainId\run-latest.json"
 if (!(Test-Path $broadcastPath)) {
   throw "Could not find Foundry broadcast file at $broadcastPath"
 }

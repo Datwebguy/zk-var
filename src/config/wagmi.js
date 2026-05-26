@@ -3,33 +3,33 @@ import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { defineChain } from '@reown/appkit/networks';
 import { QueryClient } from '@tanstack/react-query';
 
-export const xLayerTestnet = defineChain({
-  id: 1952,
-  caipNetworkId: 'eip155:1952',
+export const xLayer = defineChain({
+  id: 196,
+  caipNetworkId: 'eip155:196',
   chainNamespace: 'eip155',
-  name: 'X Layer Testnet',
+  name: 'X Layer',
   nativeCurrency: {
     decimals: 18,
     name: 'OKB',
     symbol: 'OKB'
   },
   rpcUrls: {
-    default: { http: ['https://testrpc.xlayer.tech/terigon'] },
-    public: { http: ['https://testrpc.xlayer.tech/terigon'] }
+    default: { http: ['https://rpc.xlayer.tech'] },
+    public: { http: ['https://rpc.xlayer.tech', 'https://xlayerrpc.okx.com'] }
   },
   blockExplorers: {
     default: {
       name: 'OKX Explorer',
-      url: 'https://www.okx.com/web3/explorer/xlayer-test'
+      url: 'https://www.okx.com/web3/explorer/xlayer'
     }
   },
-  testnet: true
+  testnet: false
 });
 
 export const queryClient = new QueryClient();
 
 const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || 'demo-zk-var-local';
-const networks = [xLayerTestnet];
+const networks = [xLayer];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,
@@ -40,7 +40,7 @@ createAppKit({
   adapters: [wagmiAdapter],
   networks,
   projectId,
-  defaultNetwork: xLayerTestnet,
+  defaultNetwork: xLayer,
   metadata: {
     name: 'ZK-VAR',
     description: 'Zero-Knowledge sports prediction market on X Layer',

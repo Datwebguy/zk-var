@@ -1,16 +1,16 @@
 import { ethers } from 'ethers';
 
-// These are placeholder addresses that are populated after deployment on X Layer Testnet
+// These are populated after deployment on X Layer mainnet.
 export const CONTRACT_ADDRESSES = {
-  ZKVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS || "0x977f25bbff3180a85e5160a0c2fb0aba431935bd",
-  DisputeRegistry: import.meta.env.VITE_DISPUTE_REGISTRY_ADDRESS || "0xa3eadc2ffed327f1e8f9a62ac4f100000aed4c7a",
-  PredictionPool: import.meta.env.VITE_PREDICTION_POOL_ADDRESS || "0x18a2d7c02e8f44dda3498dec63cb770da78f7a9e"
+  ZKVerifier: import.meta.env.VITE_ZK_VERIFIER_ADDRESS || "0xdd6df236a011c02c40d5a9674971bcd929f22958",
+  DisputeRegistry: import.meta.env.VITE_DISPUTE_REGISTRY_ADDRESS || "0x8a549cbc1447110a7ce5e4f77072cb80b8c240d4",
+  PredictionPool: import.meta.env.VITE_PREDICTION_POOL_ADDRESS || "0x359ac1e8a0ce01b002ac4b85802a889ac4d35557"
 };
 
-export const XLAYER_CHAIN_ID = 1952;
+export const XLAYER_CHAIN_ID = 196;
 export const XLAYER_RPC_URLS = [
-  "https://testrpc.xlayer.tech/terigon",
-  "https://xlayertestrpc.okx.com/terigon"
+  "https://rpc.xlayer.tech",
+  "https://xlayerrpc.okx.com"
 ];
 
 export const ZK_VERIFIER_ABI = [

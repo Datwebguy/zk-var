@@ -1,7 +1,8 @@
 param(
   [string]$Sp1ContractsDir = "$env:TEMP\sp1-contracts\contracts",
-  [string]$RpcUrl = "https://testrpc.xlayer.tech/terigon",
-  [string]$ChainName = "XLAYER_TESTNET",
+  [string]$RpcUrl = "https://rpc.xlayer.tech",
+  [string]$ChainName = "XLAYER",
+  [int]$ChainId = 196,
   [string]$Create2Salt = "0x0000000000000000000000000000000000000000000000000000000000000009"
 )
 
@@ -66,7 +67,7 @@ $envValues = Read-EnvFile $envPath
 
 $privateKey = $envValues["PRIVATE_KEY"]
 if ([string]::IsNullOrWhiteSpace($privateKey) -or $privateKey -match "^0x0{64}$") {
-  throw "PRIVATE_KEY is missing or still the zero placeholder in .env. Add a funded X Layer testnet deployer key locally, then rerun."
+  throw "PRIVATE_KEY is missing or still the zero placeholder in .env. Add a funded X Layer mainnet deployer key locally, then rerun."
 }
 
 if (!(Test-Path $Sp1ContractsDir)) {
@@ -87,7 +88,7 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($owner)) {
   throw "Could not derive deployer address from PRIVATE_KEY."
 }
 
-Write-Host "Deploying SP1 Groth16 verifier gateway to X Layer testnet..."
+Write-Host "Deploying SP1 Groth16 verifier gateway to X Layer mainnet..."
 Write-Host "Owner/deployer: $owner"
 
 $previousLocation = Get-Location
@@ -111,7 +112,7 @@ try {
     throw "Groth16 verifier route deployment failed."
   }
 
-  $deploymentPath = Join-Path $Sp1ContractsDir "deployments\1952.json"
+  $deploymentPath = Join-Path $Sp1ContractsDir "deployments\$ChainId.json"
   if (!(Test-Path $deploymentPath)) {
     throw "Expected deployment file was not created: $deploymentPath"
   }

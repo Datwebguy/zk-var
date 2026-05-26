@@ -1,5 +1,5 @@
 export const TX_HISTORY_EVENT = 'zkvar:transaction-history-updated';
-export const EXPLORER_TX_BASE = 'https://www.okx.com/web3/explorer/xlayer-test/tx';
+export const EXPLORER_TX_BASE = 'https://www.okx.com/web3/explorer/xlayer/tx';
 
 const HISTORY_PREFIX = 'zkvar:tx-history';
 const MAX_HISTORY_ITEMS = 100;
