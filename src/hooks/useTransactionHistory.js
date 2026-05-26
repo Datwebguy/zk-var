@@ -46,6 +46,14 @@ const queryFilterInChunks = async ({ contract, filter, fromBlock, toBlock, maxIt
   return logs.slice(0, maxItems);
 };
 
+const queryFilterGroup = async (queries) => {
+  const results = await Promise.allSettled(queries.map((query) => queryFilterInChunks(query)));
+
+  return results
+    .filter((result) => result.status === 'fulfilled')
+    .flatMap((result) => result.value);
+};
+
 const mapEventRecord = async (provider, blockCache, log, fallbackType) => {
   const timestamp = await getBlockTimestamp(provider, blockCache, log.blockNumber);
   const name = log.fragment?.name || fallbackType;
@@ -113,93 +121,104 @@ export const useTransactionHistory = (walletAddress) => {
     setError('');
 
     try {
-      const provider = new ethers.JsonRpcProvider(XLAYER_RPC_URLS[0]);
-      const latestBlock = await provider.getBlockNumber();
-      const fromBlock = getHistoryStartBlock(latestBlock);
-      const blockCache = new Map();
-      const predictionPool = new ethers.Contract(CONTRACT_ADDRESSES.PredictionPool, PREDICTION_POOL_ABI, provider);
-      const disputeRegistry = new ethers.Contract(CONTRACT_ADDRESSES.DisputeRegistry, DISPUTE_REGISTRY_ABI, provider);
+      let lastError = null;
 
-      const publicLogs = await Promise.all([
-        queryFilterInChunks({
-          contract: predictionPool,
-          filter: predictionPool.filters.BetPlaced(),
-          fromBlock,
-          toBlock: latestBlock,
-          maxItems: MAX_PUBLIC_ITEMS
-        }),
-        queryFilterInChunks({
-          contract: disputeRegistry,
-          filter: disputeRegistry.filters.VoteCast(),
-          fromBlock,
-          toBlock: latestBlock,
-          maxItems: MAX_PUBLIC_ITEMS
-        })
-      ]);
+      for (const rpcUrl of XLAYER_RPC_URLS) {
+        try {
+          const provider = new ethers.JsonRpcProvider(rpcUrl);
+          const latestBlock = await provider.getBlockNumber();
+          const fromBlock = getHistoryStartBlock(latestBlock);
+          const blockCache = new Map();
+          const predictionPool = new ethers.Contract(CONTRACT_ADDRESSES.PredictionPool, PREDICTION_POOL_ABI, provider);
+          const disputeRegistry = new ethers.Contract(CONTRACT_ADDRESSES.DisputeRegistry, DISPUTE_REGISTRY_ABI, provider);
 
-      const publicRecords = await Promise.all(
-        publicLogs.flat().map((log) => mapEventRecord(provider, blockCache, log))
-      );
+          const publicLogs = await queryFilterGroup([
+            {
+              contract: predictionPool,
+              filter: predictionPool.filters.BetPlaced(),
+              fromBlock,
+              toBlock: latestBlock,
+              maxItems: MAX_PUBLIC_ITEMS
+            },
+            {
+              contract: disputeRegistry,
+              filter: disputeRegistry.filters.VoteCast(),
+              fromBlock,
+              toBlock: latestBlock,
+              maxItems: MAX_PUBLIC_ITEMS
+            }
+          ]);
 
-      setPublicHistory(
-        publicRecords
-          .sort((a, b) => b.timestamp - a.timestamp)
-          .slice(0, MAX_PUBLIC_ITEMS)
-      );
+          const publicRecords = await Promise.all(
+            publicLogs.map((log) => mapEventRecord(provider, blockCache, log))
+          );
 
-      if (walletAddress) {
-        const personalLogs = await Promise.all([
-          queryFilterInChunks({
-            contract: predictionPool,
-            filter: predictionPool.filters.BetPlaced(null, walletAddress),
-            fromBlock,
-            toBlock: latestBlock,
-            maxItems: MAX_PERSONAL_CHAIN_ITEMS
-          }),
-          queryFilterInChunks({
-            contract: disputeRegistry,
-            filter: disputeRegistry.filters.VoteCast(null, walletAddress),
-            fromBlock,
-            toBlock: latestBlock,
-            maxItems: MAX_PERSONAL_CHAIN_ITEMS
-          }),
-          queryFilterInChunks({
-            contract: predictionPool,
-            filter: predictionPool.filters.PayoutClaimed(null, walletAddress),
-            fromBlock,
-            toBlock: latestBlock,
-            maxItems: MAX_PERSONAL_CHAIN_ITEMS
-          }),
-          queryFilterInChunks({
-            contract: predictionPool,
-            filter: predictionPool.filters.RefundClaimed(null, walletAddress),
-            fromBlock,
-            toBlock: latestBlock,
-            maxItems: MAX_PERSONAL_CHAIN_ITEMS
-          }),
-          queryFilterInChunks({
-            contract: disputeRegistry,
-            filter: disputeRegistry.filters.RewardsClaimed(null, walletAddress),
-            fromBlock,
-            toBlock: latestBlock,
-            maxItems: MAX_PERSONAL_CHAIN_ITEMS
-          })
-        ]);
+          setPublicHistory(
+            publicRecords
+              .sort((a, b) => b.timestamp - a.timestamp)
+              .slice(0, MAX_PUBLIC_ITEMS)
+          );
 
-        const personalRecords = await Promise.all(
-          personalLogs.flat().map((log) => mapEventRecord(provider, blockCache, log))
-        );
+          if (walletAddress) {
+            const personalLogs = await queryFilterGroup([
+              {
+                contract: predictionPool,
+                filter: predictionPool.filters.BetPlaced(null, walletAddress),
+                fromBlock,
+                toBlock: latestBlock,
+                maxItems: MAX_PERSONAL_CHAIN_ITEMS
+              },
+              {
+                contract: disputeRegistry,
+                filter: disputeRegistry.filters.VoteCast(null, walletAddress),
+                fromBlock,
+                toBlock: latestBlock,
+                maxItems: MAX_PERSONAL_CHAIN_ITEMS
+              },
+              {
+                contract: predictionPool,
+                filter: predictionPool.filters.PayoutClaimed(null, walletAddress),
+                fromBlock,
+                toBlock: latestBlock,
+                maxItems: MAX_PERSONAL_CHAIN_ITEMS
+              },
+              {
+                contract: predictionPool,
+                filter: predictionPool.filters.RefundClaimed(null, walletAddress),
+                fromBlock,
+                toBlock: latestBlock,
+                maxItems: MAX_PERSONAL_CHAIN_ITEMS
+              },
+              {
+                contract: disputeRegistry,
+                filter: disputeRegistry.filters.RewardsClaimed(null, walletAddress),
+                fromBlock,
+                toBlock: latestBlock,
+                maxItems: MAX_PERSONAL_CHAIN_ITEMS
+              }
+            ]);
 
-        setPersonalChainHistory(
-          personalRecords
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, MAX_PERSONAL_CHAIN_ITEMS)
-        );
-      } else {
-        setPersonalChainHistory([]);
+            const personalRecords = await Promise.all(
+              personalLogs.map((log) => mapEventRecord(provider, blockCache, log))
+            );
+
+            setPersonalChainHistory(
+              personalRecords
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, MAX_PERSONAL_CHAIN_ITEMS)
+            );
+          } else {
+            setPersonalChainHistory([]);
+          }
+
+          setScannedRange({ fromBlock, toBlock: latestBlock });
+          return;
+        } catch (rpcError) {
+          lastError = rpcError;
+        }
       }
 
-      setScannedRange({ fromBlock, toBlock: latestBlock });
+      throw lastError || new Error('No X Layer RPC URL configured.');
     } catch (historyError) {
       console.error('Transaction history fetch failed:', historyError);
       setError('Could not load on-chain history from the X Layer RPC.');
