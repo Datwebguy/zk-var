@@ -69,6 +69,17 @@ const shouldShowMarket = (question = '') => (
   !HIDDEN_NON_X_CUP_MARKET_PATTERNS.some((pattern) => question.toLowerCase().includes(pattern))
 );
 
+const fetchMarketSnapshot = async () => {
+  const response = await fetch('/api/markets');
+  const bodyText = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Market snapshot request failed with HTTP ${response.status}: ${bodyText}`);
+  }
+
+  return JSON.parse(bodyText);
+};
+
 export const usePrediction = () => {
   const {
     setWalletState,
@@ -230,7 +241,16 @@ export const usePrediction = () => {
         }
       }));
 
-      const activePools = results.filter(Boolean);
+      let activePools = results.filter(Boolean);
+      if (activePools.length === 0) {
+        try {
+          const snapshot = await fetchMarketSnapshot();
+          activePools = Array.isArray(snapshot.pools) ? snapshot.pools : [];
+        } catch (snapshotError) {
+          logRpcError('MARKET SNAPSHOT POOLS FETCH FAILED', snapshotError);
+        }
+      }
+
       cache.pools = activePools;
       cache.lastFetchedPools = now;
       setPredictionPools(activePools);
@@ -285,7 +305,16 @@ export const usePrediction = () => {
         }
       }));
 
-      const activeDisputes = results.filter(Boolean);
+      let activeDisputes = results.filter(Boolean);
+      if (activeDisputes.length === 0) {
+        try {
+          const snapshot = await fetchMarketSnapshot();
+          activeDisputes = Array.isArray(snapshot.disputes) ? snapshot.disputes : [];
+        } catch (snapshotError) {
+          logRpcError('MARKET SNAPSHOT DISPUTES FETCH FAILED', snapshotError);
+        }
+      }
+
       cache.disputes = activeDisputes;
       cache.lastFetchedDisputes = now;
       setDisputes(activeDisputes);
