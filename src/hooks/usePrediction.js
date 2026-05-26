@@ -335,7 +335,6 @@ export const usePrediction = () => {
         await switchChainAsync({ chainId: XLAYER_CHAIN_ID });
       }
 
-      console.log(`[TRANSACTION] ${contractType}.${method}`, { args, value });
       const hash = await writeContract(config, {
         address: CONTRACT_ADDRESSES[contractType],
         abi: WAGMI_ABIS[contractType],

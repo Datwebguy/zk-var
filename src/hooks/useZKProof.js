@@ -72,13 +72,6 @@ export const useZKProof = () => {
         addLogLine('[SYSTEM] Broadcasting proof payload to ZKVerifier.sol on X Layer...');
         addLogLine('[SYSTEM] Awaiting signature in Web3 wallet...');
 
-        console.log('[ZK TRANSACTION] verifyPlayProof real proof payload:', {
-          to: CONTRACT_ADDRESSES.ZKVerifier,
-          playId,
-          isOffside: proof.isOffside,
-          dataHash: proof.dataHash
-        });
-
         const tx = await contract.verifyPlayProof(
           playId,
           proof.isOffside,

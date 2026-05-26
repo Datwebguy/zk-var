@@ -11,7 +11,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
   const { userAddress, contractOwner } = useAppStore();
 
-  const [voteChoice, setVoteChoice] = useState(1); // Default to Choice 1: Valid
+  const [voteChoice, setVoteChoice] = useState(1);
   const [stakeAmount, setStakeAmount] = useState('0.015');
 
   const dispute = disputes.find(d => d.playId === activePlayId) || disputes[0];
@@ -84,7 +84,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
       <div className="flex-1 flex flex-col justify-between gap-5">
         <div>
           <div className="flex justify-between items-center mb-2">
-            <span className="hud-label"><Scale size={14} className="text-[#A8FF35]" /> Fan Jury Court</span>
+            <span className="hud-label"><Scale size={14} className="text-[#A8FF35]" /> Jury Review</span>
             <span className={`status-badge ${dispute.status === 2 ? 'resolved' : 'active'}`}>
               {getStatusText(dispute.status)}
             </span>
@@ -95,7 +95,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
           <p className="text-xs text-zinc-500 font-mono">
             {isClosed 
               ? 'This dispute is settled. Correct voters are eligible for rewards.'
-              : 'Staked votes establish the initial consensus. A ZK-AI proof will trigger the final resolution.'
+              : 'Staked votes establish the initial consensus. An SP1 proof can trigger final on-chain resolution.'
             }
           </p>
         </div>
@@ -259,7 +259,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
               style={{ boxShadow: '0 0 15px rgba(168,255,53,0.1)' }}
             >
               <Sparkles size={14} className="animate-pulse" />
-              Trigger ZK-AI Referee (SP1)
+              Trigger SP1 Verification
             </button>
             <span className="text-3xs text-zinc-600 text-center leading-normal">
               Requests a real prover result, then verifies the SP1 proof on-chain.

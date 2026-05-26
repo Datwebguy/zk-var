@@ -280,7 +280,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
             <Coins size={36} className="text-zinc-600 mb-3 animate-pulse" />
             <h4 className="font-heading font-bold text-sm text-white mb-1">No Active Pool Selected</h4>
             <p className="text-3xs text-zinc-500 font-mono leading-normal max-w-[180px] mb-6">
-              Select a live arena pool from the left grid to open fast trade options.
+              Select a live pool from the left grid to open trade options.
             </p>
             <button disabled className="neon-btn w-full py-3 opacity-40 cursor-not-allowed uppercase font-bold text-xs tracking-wider">
               NO POOL SELECTED

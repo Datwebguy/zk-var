@@ -94,7 +94,7 @@ const deriveVerdict = (timeline) => {
 const requestProofFromBackend = async ({ playId, isOffside, dataHash, timeline }) => {
   const proverUrl = process.env.SP1_PROVER_URL;
   if (!proverUrl) {
-    throw new Error('SP1_PROVER_URL is not configured. Refusing to return fake proof bytes.');
+    throw new Error('SP1_PROVER_URL is not configured. Proof generation is unavailable.');
   }
 
   const response = await fetch(`${proverUrl.replace(/\/$/, '')}/prove`, {

@@ -11,7 +11,7 @@ export const AdminPanel = () => {
   const [poolId, setPoolId] = useState('4');
   const [question, setQuestion] = useState('Will the FIFA World Cup 2026 opening match include a VAR offside overturn?');
   const [description, setDescription] = useState('FIFA World Cup 2026 opening match. Market resolves YES if any goal or major attacking phase is overturned for offside by VAR; otherwise resolves NO.');
-  const [duration, setDuration] = useState('86400'); // Default 1 day
+  const [duration, setDuration] = useState('86400');
   const [retirePoolId, setRetirePoolId] = useState('3');
 
   // Check if current user is owner
@@ -66,10 +66,9 @@ export const AdminPanel = () => {
       return;
     }
 
-    // Real on-chain creation
     const success = await createPoolAndDispute(playNum, poolNum, question.trim(), description.trim(), durationNum);
     if (success) {
-      addNotification('success', `On-Chain Arena Pool & Dispute deployed!`);
+      addNotification('success', 'Prediction pool and dispute deployed on-chain.');
       setPlayId((playNum + 1).toString());
       setPoolId((poolNum + 1).toString());
       setQuestion('');
@@ -108,7 +107,7 @@ export const AdminPanel = () => {
           <div className="bg-[#0c1c13] border border-[#A8FF35]/10 p-3 rounded-lg flex items-center gap-2">
             <CheckCircle2 className="text-[#A8FF35]" size={14} />
             <span className="text-zinc-400 text-3xs">
-              LOGGED IN AS CONTRACT OWNER. Deploy World Cup-themed X Cup markets on X Layer.
+              Logged in as contract owner. Deploy World Cup-themed X Cup markets on X Layer.
             </span>
           </div>
 
@@ -230,7 +229,7 @@ export const AdminPanel = () => {
             className="neon-btn w-full py-2.5 flex items-center justify-center gap-2"
           >
             <PlusCircle size={16} />
-            {loading ? "DEPLOYING TO BLOCKCHAIN..." : "DEPLOY NEW ARENA PLAY (ON-CHAIN)"}
+            {loading ? "DEPLOYING TO BLOCKCHAIN..." : "DEPLOY NEW MARKET (ON-CHAIN)"}
           </button>
         </form>
       )}

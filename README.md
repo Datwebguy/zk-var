@@ -1,262 +1,184 @@
-# ZK-VAR // Zero-Knowledge Video Assistant Referee
+# ZK-VAR
 
-> **World Cup-themed Sovereign Referee Arena & Decentralized Sports Predictions on X Layer**
-> 
-> A World Cup-themed decentralized prediction market and dispute resolution engine. Outcomes are resolved through a two-stage mechanism: a decentralized crowd-sourced jury tribunal and a Zero-Knowledge-verifiable AI Referee (SP1 ZK-VM) executing on-chain proofs.
+ZK-VAR is a World Cup-themed prediction market and dispute resolution app deployed on X Layer mainnet. Users stake native OKB on referee-review outcomes, vote in related dispute reviews, and claim payouts or refunds after settlement.
 
----
+The settlement path uses a real SP1 proof service. The app requests a proof from the configured prover, commits the source-data hash on-chain when needed, and submits the returned proof bytes and public values to `ZKVerifier.sol`.
 
-## 🏆 X Cup Alignment
+## Hackathon Fit
 
-ZK-VAR is built for the **Build X Hackathon: X Cup** as a World Cup-themed project on X Layer.
+- World Cup and VAR decision markets for X Cup.
+- Native OKB settlement on X Layer mainnet.
+- On-chain prediction pools, dispute voting, and claim flows.
+- SP1 proof verification integrated through a deployed verifier contract.
+- Production market data is read from X Layer contract state.
 
-* **Theme:** World Cup VAR moments, disputed goals, offside calls, penalty reviews, touchline disputes, and fan debate.
-* **Track fit:** Prediction markets, AI/ZK referee flow, social/fan jury participation.
-* **X Layer deployment:** PredictionPool, DisputeRegistry, and ZKVerifier are deployed on X Layer Testnet.
-* **Dedicated X account:** [@TheZkVar](https://x.com/TheZkVar)
-* **Builder:** [@Datweb3guy](https://x.com/Datweb3guy)
+## Mainnet Deployment
 
-The public app now focuses on World Cup-style markets. Non-X Cup markets can be cancelled from the owner-only Admin console so affected users can claim refunds.
+| Contract | Address |
+| --- | --- |
+| `PredictionPool.sol` | `0x359ac1e8a0ce01b002ac4b85802a889ac4d35557` |
+| `DisputeRegistry.sol` | `0x8a549cbc1447110a7ce5e4f77072cb80b8c240d4` |
+| `ZKVerifier.sol` | `0xdd6df236a011c02c40d5a9674971bcd929f22958` |
+| SP1 verifier gateway | `0xe624B37fA01d31322386a7D29580Adac82440A11` |
+| SP1 Groth16 route | `0xc2223A25470562B57D27E5a10f8FbbB967941e6C` |
 
----
+X Layer mainnet:
 
-## ⚽ The Problem & The ZK-VAR Innovation
+```text
+Chain ID: 196
+RPC URL: https://rpc.xlayer.tech
+Fallback RPC URL: https://xlayerrpc.okx.com
+Explorer: https://www.okx.com/web3/explorer/xlayer
+Native token: OKB
+```
 
-Controversial refereeing decisions—like contested offsides, touchline exits, and penalties—frequently decide match outcomes. Traditional sports prediction markets rely on centralized third-party data oracles. These oracle APIs suffer from latency, single-point failures, and lack of accountability, leaving prediction outcomes subject to dispute or manipulation.
+SP1 program verification key:
 
-**ZK-VAR** introduces a trustless, transparent model for resolving contentious sports events:
-1. **Decentralized Fan Jury Tribunal:** Fans stake native `OKB` to vote on active disputes, establishing a weighted consensus.
-2. **ZK-VM Proof Settlement:** A deterministic referee algorithm analyses game parameters (e.g. spatial coordinates of players and the ball). It generates a cryptographic proof in the **Succinct SP1 ZK-VM**. The proof is verified on-chain via a verifier contract to settle the dispute with mathematical finality, overriding/finalizing the prediction pools.
+```text
+0x00a87127b8bbd6781347a09977e6f9820fcd942aab11c8e8881cf4075a71454e
+```
 
----
-
-## 🛠️ Deployed Smart Contracts (X Layer Testnet)
-
-All smart contracts are fully open-source, compiled, and deployed on the **X Layer Testnet (Chain ID: 1952)** using native `OKB` tokens.
-
-| Contract Name | Deployed Address | Explorer Link |
-| :--- | :--- | :--- |
-| **PredictionPool.sol** | `0x18a2d7c02e8f44dda3498dec63cb770da78f7a9e` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x18a2d7c02e8f44dda3498dec63cb770da78f7a9e) |
-| **DisputeRegistry.sol**| `0xa3eadc2ffed327f1e8f9a62ac4f100000aed4c7a` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0xa3eadc2ffed327f1e8f9a62ac4f100000aed4c7a) |
-| **ZKVerifier.sol**     | `0x977f25bbff3180a85e5160a0c2fb0aba431935bd` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0x977f25bbff3180a85e5160a0c2fb0aba431935bd) |
-| **SP1 Verifier Gateway** | `0xe624B37fA01d31322386a7D29580Adac82440A11` | [View on OKLink](https://www.okx.com/web3/explorer/xlayer-test/address/0xe624B37fA01d31322386a7D29580Adac82440A11) |
-
----
-
-## 📐 System Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Frontend [dApp Client]
-        UI[Premium HUD Interface]
-        Wallet[Reown AppKit Wallets]
-        ZKP[SP1 ZK-VM Proof Generator]
-    end
-
-    subgraph Contracts [X Layer L2 Contracts]
-        Pools[PredictionPool.sol]
-        Disputes[DisputeRegistry.sol]
-        Verifier[ZKVerifier.sol]
-    end
-
-    UI -->|Connect & Query| Wallet
-    Wallet -->|1. Place Bet| Pools
-    Wallet -->|2. Stake & Vote| Disputes
-    ZKP -->|3. Submit Proof bytes + Public Values| Verifier
-    Verifier -->|4. verify| SP1[ISP1Verifier Contract]
-    Verifier -->|5. resolveFromVerifier| Disputes
-    Disputes -->|6. resolvePrediction| Pools
-    Pools -->|7. Distribute OKB rewards| Wallet
+    UI[React dApp] --> Wallet[Reown AppKit + wagmi]
+    Wallet --> Pool[PredictionPool]
+    Wallet --> Registry[DisputeRegistry]
+    UI --> API[Vercel API]
+    API --> Data[Sportradar timeline]
+    API --> Prover[SP1 prover service]
+    Wallet --> Verifier[ZKVerifier]
+    Verifier --> SP1[SP1 verifier gateway]
+    Verifier --> Registry
+    Registry --> Pool
 ```
 
-### 1. PredictionPool.sol
-Handles prediction pool lifecycle (Creation, Betting, Resolution, Payout Claims, and Refund Claims). 
-* Users bet on outcomes `1 (Yes)` or `2 (No)` by sending native `OKB` to `placePrediction()`.
-* Resolution is locked until the `DisputeRegistry` contract provides the authoritative referee verdict.
+## Contracts
 
-### Transaction History
-The interface includes two transaction history views:
-* **My Wallet:** wallet-scoped activity for the connected address, including dApp-submitted transactions and matching on-chain stake/claim events.
-* **Market Feed:** public on-chain prediction and jury stake events scanned from X Layer logs, with direct OKX Explorer links.
+### PredictionPool
 
-The X Layer testnet RPC limits `eth_getLogs` ranges to 100 blocks, so history is fetched in small chunks. Tune `VITE_HISTORY_LOOKBACK_BLOCKS` if you need a wider or faster public feed.
+- Creates prediction pools.
+- Accepts native OKB stakes on outcome `1` or `2`.
+- Resolves only through the linked `DisputeRegistry`.
+- Handles payout and refund claims.
 
-### 2. DisputeRegistry.sol
-Manages tribunals for controversial match plays. 
-* Fans stake `OKB` to back their vote choices: `Valid`, `Invalid`, or `Inconclusive`.
-* Winning voters receive their proportional share of the losing stakes via `claimJuryRewards()`.
-* The `resolveFromVerifier()` interface allows an authorized `ZKVerifier` contract to settle the dispute instantly, overriding the tribunal.
+### DisputeRegistry
 
-### 3. ZKVerifier.sol
-Receives SP1 verification proofs.
-* Validates that the guest program public output parameters match the play details.
-* Interacts with Succinct's standard `ISP1Verifier` system contract deployed on X Layer to verify proofs.
-* Requires a committed play-data hash before settlement, so proofs are tied to the exact match/event data used by the prover.
-* The mock verifier path has been removed. A real prover service and nonzero SP1 program verification key are required for new deployments.
+- Creates a dispute for a specific play and prediction pool.
+- Accepts staked jury votes: valid, invalid, or inconclusive.
+- Receives ZK settlement from `ZKVerifier`.
+- Handles jury reward claims.
 
-See [`docs/REAL_ZK_REFEREE.md`](docs/REAL_ZK_REFEREE.md) for the production proof/data pipeline contract.
+### ZKVerifier
 
----
+- Stores committed play-data hashes.
+- Verifies SP1 proof payloads through the configured verifier gateway.
+- Calls `DisputeRegistry.resolveFromVerifier()` after successful proof verification.
 
-## ⚡ Wallet Transaction Model
+## Frontend
 
-ZK-VAR uses real wallet-signed transactions through Reown AppKit + wagmi. Prediction stakes, jury votes, proof submissions, and claims are sent by the connected wallet, so the wallet address remains the on-chain `msg.sender` and native `OKB` is deducted from the actual user account.
+The frontend reads active pools and disputes from X Layer contracts. Browser RPC reads are backed by `/api/markets`, a server-side read endpoint that returns the same on-chain fields without invented fallback records.
 
-The connection modal supports MetaMask, WalletConnect mobile wallets, Coinbase Wallet, Rabby, and other injected wallets. MetaMask/WalletConnect are recommended for live demos on X Layer Testnet. OKX Wallet can connect, but its testnet pre-broadcast simulator may reject valid contract writes before showing a signature prompt.
+The dApp supports:
 
----
+- Wallet connection through Reown AppKit.
+- Prediction staking.
+- Jury voting.
+- Owner-only market deployment.
+- Owner-only SP1 proof settlement.
+- Claim center for wallet positions.
+- Transaction history with OKX Explorer links.
 
-## 🚀 Vercel Deployment
+## API Routes
 
-ZK-VAR is a Vite frontend and can be deployed directly to Vercel.
+### `POST /api/prove`
 
-### Required Vercel Settings
+Inputs:
 
-```text
-Framework Preset: Vite
-Build Command: npm run build
-Output Directory: dist
-Install Command: npm install
+```json
+{ "playId": 101 }
 ```
 
-The repository includes `vercel.json` with SPA rewrites, so direct links and refreshes on pages like `/markets`, `/tribunal`, and `/history` load correctly.
+Flow:
 
-### Required Vercel Environment Variables
+1. Reads the configured Sportradar event mapping.
+2. Fetches the timeline for the play.
+3. Derives the referee-review verdict from source data.
+4. Hashes the canonical source payload.
+5. Requests proof bytes from `SP1_PROVER_URL`.
+6. Returns `isOffside`, `dataHash`, `publicValues`, and `proofBytes`.
 
-Add these in **Vercel Project Settings → Environment Variables**:
+The route fails if the prover is not configured or does not return a valid proof response.
+
+### `GET /api/markets`
+
+Reads current pool and dispute records from X Layer mainnet. This endpoint is used as a resilient fallback when a browser RPC provider is unavailable.
+
+## Environment Variables
+
+### Vercel frontend and API
 
 ```env
-VITE_REOWN_PROJECT_ID=your_reown_project_id_here
-VITE_ZK_PROVER_API_URL=https://your-prover-api.example.com
-VITE_ZK_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
-VITE_DISPUTE_REGISTRY_ADDRESS=0x0000000000000000000000000000000000000000
-VITE_PREDICTION_POOL_ADDRESS=0x0000000000000000000000000000000000000000
-VITE_HISTORY_START_BLOCK=30819655
-VITE_HISTORY_LOOKBACK_BLOCKS=1000
-```
+VITE_REOWN_PROJECT_ID=your_reown_project_id
+VITE_ZK_VERIFIER_ADDRESS=0xdd6df236a011c02c40d5a9674971bcd929f22958
+VITE_DISPUTE_REGISTRY_ADDRESS=0x8a549cbc1447110a7ce5e4f77072cb80b8c240d4
+VITE_PREDICTION_POOL_ADDRESS=0x359ac1e8a0ce01b002ac4b85802a889ac4d35557
+VITE_HISTORY_START_BLOCK=61004981
+VITE_HISTORY_LOOKBACK_BLOCKS=50000
 
-If `VITE_ZK_PROVER_API_URL` is unset, the frontend calls this app's Vercel serverless route at `/api/prove`.
-Configure these server-only variables in Vercel for that route:
-
-```env
-SPORTRADAR_API_KEY=your_sportradar_key_here
+SPORTRADAR_API_KEY=your_sportradar_key
 SPORTRADAR_ACCESS_LEVEL=trial
 SPORTRADAR_LANGUAGE=en
 SPORTRADAR_FORMAT=json
-SPORTRADAR_SPORT_EVENT_MAP={"101":"sr:sport_event:00000000"}
+SPORTRADAR_SPORT_EVENT_MAP={"101":"sr:sport_event:66456904"}
 SP1_PROVER_URL=https://your-sp1-prover.example.com
 ```
 
-Do **not** add `PRIVATE_KEY` to Vercel for the frontend deployment. `PRIVATE_KEY`, `RPC_URL`, and `RPC_FALLBACK_URL` are only used by local contract scripts such as `initialize.js` and `query.js`.
+### Local contract scripts
 
-### Reown / WalletConnect Domain Setup
+```env
+PRIVATE_KEY=your_deployer_private_key
+RPC_URL=https://rpc.xlayer.tech
+RPC_FALLBACK_URL=https://xlayerrpc.okx.com
+SP1_VERIFIER=0xe624B37fA01d31322386a7D29580Adac82440A11
+SP1_PROGRAM_VKEY=0x00a87127b8bbd6781347a09977e6f9820fcd942aab11c8e8881cf4075a71454e
+```
 
-After Vercel gives you a production URL, add that domain to your Reown project at [dashboard.reown.com](https://dashboard.reown.com). WalletConnect may fail or show warnings if the deployed domain is not allowed in the Reown project settings.
+Do not add private keys to Vercel.
 
----
+## Local Development
 
-## ⚙️ Local Setup & Run Guide
-
-### 1. Prerequisites
-Ensure you have the following installed:
-* **Node.js** (v20+ recommended)
-* **Foundry** (for solidity tests and deployment scripts)
-
-### 2. Clone & Install Dependencies
 ```bash
-git clone https://github.com/Datwebguy/zk-var.git
-cd zk-var
 npm install
-```
-
-### 3. Configure Local Environment
-Create a `.env` file in the root directory:
-```env
-PRIVATE_KEY=your_deployer_private_key_here
-RPC_URL=https://testrpc.xlayer.tech/terigon
-RPC_FALLBACK_URL=https://xlayertestrpc.okx.com/terigon
-SP1_VERIFIER=0x0000000000000000000000000000000000000000
-SP1_PROGRAM_VKEY=0x0000000000000000000000000000000000000000000000000000000000000000
-VITE_REOWN_PROJECT_ID=your_reown_project_id_here
-VITE_ZK_PROVER_API_URL=https://your-prover-api.example.com
-SPORTRADAR_API_KEY=your_sportradar_key_here
-SPORTRADAR_ACCESS_LEVEL=trial
-SPORTRADAR_LANGUAGE=en
-SPORTRADAR_FORMAT=json
-SPORTRADAR_SPORT_EVENT_MAP={"101":"sr:sport_event:00000000"}
-SP1_PROVER_URL=https://your-sp1-prover.example.com
-VITE_ZK_VERIFIER_ADDRESS=0x0000000000000000000000000000000000000000
-VITE_DISPUTE_REGISTRY_ADDRESS=0x0000000000000000000000000000000000000000
-VITE_PREDICTION_POOL_ADDRESS=0x0000000000000000000000000000000000000000
-
-# Optional history scan tuning for the deployed contracts
-VITE_HISTORY_START_BLOCK=30819655
-VITE_HISTORY_LOOKBACK_BLOCKS=1000
-```
-*(The local `.env` is ignored by git to keep your private key secure.)*
-
-### 4. X Layer Testnet Wallet Settings
-If your wallet asks you to add the network manually, use the official X Layer testnet details:
-
-```text
-Network name: X Layer Testnet
-Chain ID: 1952
-Currency symbol: OKB
-RPC URL: https://testrpc.xlayer.tech/terigon
-Fallback RPC URL: https://xlayertestrpc.okx.com/terigon
-Block explorer: https://www.okx.com/web3/explorer/xlayer-test
-```
-
-If a wallet shows `invalid chain ID`, remove any old custom X Layer network using chain ID `195` and re-add it with chain ID `1952`.
-
-### 5. Running the Development Server
-```bash
 npm run dev
 ```
-Open `http://localhost:3000` to interact with the ZK-VAR interface.
 
-### 6. Smart Contract Tests (Foundry)
-Execute the contract test suite:
+Build and lint:
+
+```bash
+npm run lint
+npm run build
+```
+
+Foundry tests:
+
 ```bash
 forge test
 ```
 
----
+## Usage Flow
 
-## 👁️ Walkthrough Guide (Step-by-Step Flow)
+1. Connect a wallet on X Layer mainnet.
+2. Open Markets and choose an active prediction pool.
+3. Stake OKB on the selected outcome.
+4. Open Tribunal and cast a staked jury vote if desired.
+5. Wait for owner/oracle settlement through SP1 verification.
+6. Claim payouts, refunds, or jury rewards from the Claim Center.
 
-Follow these steps to experience the complete live on-chain lifecycle:
+## Production Notes
 
-### Step 1: Connect your Wallet
-Open the dApp and connect through the Reown wallet modal. MetaMask or WalletConnect are recommended for X Layer Testnet (Chain ID: 1952). Ensure the connected wallet has testnet `OKB` tokens.
-
-### Step 2: Place Predictions
-* Choose an active World Cup-themed pool in the **Sovereign Referee Arena** (e.g. *Will the FIFA World Cup 2026 opening match include a VAR offside overturn?*).
-* Enter your prediction amount (e.g., `0.1 OKB`) and choose outcome **YES** or **NO**.
-* Click **Place Prediction** and confirm the transaction in your wallet.
-
-### Step 3: Vote in the Tribunal
-* Select the corresponding active dispute in the **Decentralized Tribunal Board**.
-* Stake a custom amount of `OKB` and cast your vote on the play (e.g., voting `Valid` / `Invalid`).
-
-### Step 4: Generate the ZK-VAR Proof
-* Normal users do not trigger final resolution. They can stake predictions, vote in the tribunal, and claim after settlement.
-* The contract owner/oracle wallet opens the **Tribunal** flow and triggers the **ZK Referee** for the selected World Cup play.
-* The frontend requests a real proof from `VITE_ZK_PROVER_API_URL`, commits the returned match-data hash on-chain, and submits the proof to `ZKVerifier.sol`.
-* `ZKVerifier.sol` verifies the proof through the configured SP1 verifier, then resolves the dispute and prediction pool through the registry.
-
-### Step 5: Claim Rewards
-* Once verified, the dispute status updates to **ResolvedByZK** on-chain, and the prediction pool is settled.
-* Go back to the panels to click **Claim Payout** (if you predicted correctly) and **Claim Jury Rewards** (if your tribunal stake backed the verified ZK outcome).
-
----
-
-## 🏆 Production Deployment Status
-- [x] **Fully deployed on X Layer Testnet:** All contracts verified and working live.
-- [x] **No Mock Data:** The frontend reads strictly from on-chain contract events and states.
-- [x] **Zero-Knowledge integration:** Interactive SP1 proof verifications integrated.
-- [x] **Wallet-Signed Transactions:** Frontend write actions are signed by the connected wallet, preserving user custody and correct on-chain sender state.
-
----
-
-*Developed by [Datwebguy](https://github.com/Datwebguy).*
+- Production markets and disputes come from deployed X Layer contracts.
+- Proof settlement requires a funded Succinct prover account.
+- SP1 proof verification is owner/oracle restricted by contract permissions.
+- Users keep custody of funds and sign all stake, vote, and claim transactions from their wallet.

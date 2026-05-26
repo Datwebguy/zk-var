@@ -16,7 +16,6 @@ export const ZKProver = () => {
   const terminalLogRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // Default calm logs shown when the prover is idle (waiting for a trigger)
   const defaultLogs = [
     "[SYSTEM] SP1 proof pipeline configured.",
     `[SYSTEM] Verifier Contract: ${CONTRACT_ADDRESSES.ZKVerifier}`,
@@ -26,7 +25,6 @@ export const ZKProver = () => {
 
   const logsToRender = isZKProving ? zkProofLog : defaultLogs;
 
-  // Auto-scroll terminal log container directly to bottom without viewport jumping
   useEffect(() => {
     if (terminalLogRef.current) {
       terminalLogRef.current.scrollTop = terminalLogRef.current.scrollHeight;
@@ -34,7 +32,6 @@ export const ZKProver = () => {
   }, [logsToRender]);
 
 
-  // Graphic pipeline animator for ZK particles & idle holographic scans
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -45,11 +42,9 @@ export const ZKProver = () => {
     const width = (canvas.width = 400);
     const height = (canvas.height = 120);
     
-    // Core node
     const coreX = width / 2;
     const coreY = height / 2;
     
-    // Particles pool
     const particles = [];
     const maxParticles = 40;
 
@@ -59,7 +54,6 @@ export const ZKProver = () => {
       }
 
       reset() {
-        // Spawn around the edges
         const angle = Math.random() * Math.PI * 2;
         const dist = Math.random() * 100 + 60;
         this.x = coreX + Math.cos(angle) * dist;
@@ -70,7 +64,6 @@ export const ZKProver = () => {
       }
 
       update() {
-        // Path toward core node
         const dx = coreX - this.x;
         const dy = coreY - this.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
@@ -100,7 +93,6 @@ export const ZKProver = () => {
       ctx.fillRect(0, 0, width, height);
 
       if (isZKProving) {
-        // Core target ring
         ctx.strokeStyle = zkProofState === 'verified' ? '#A8FF35' : '#00F5FF';
         ctx.lineWidth = 2;
         ctx.shadowBlur = 8;
@@ -111,13 +103,11 @@ export const ZKProver = () => {
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        // Pulse central core fill
         ctx.fillStyle = zkProofState === 'verified' ? 'rgba(168, 255, 53, 0.2)' : 'rgba(0, 245, 255, 0.2)';
         ctx.beginPath();
         ctx.arc(coreX, coreY, 12, 0, Math.PI * 2);
         ctx.fill();
 
-        // Matrix computation lines in Act 1
         if (zkProofState === 'computing') {
           ctx.strokeStyle = 'rgba(0, 245, 255, 0.08)';
           ctx.lineWidth = 1;
@@ -133,7 +123,6 @@ export const ZKProver = () => {
           ctx.fillText(`CYCLE_STAT: ${284900 + Math.floor(Math.random() * 50)}`, 15, 32);
         }
 
-        // Act 2: Particles flow inward
         if (zkProofState === 'proving' || zkProofState === 'computing') {
           particles.forEach(p => {
             p.update();
@@ -141,7 +130,6 @@ export const ZKProver = () => {
           });
         }
 
-        // Act 3: Verification success pulse
         if (zkProofState === 'verified') {
           ctx.fillStyle = '#A8FF35';
           ctx.font = 'bold 11px monospace';
@@ -150,7 +138,6 @@ export const ZKProver = () => {
           ctx.textAlign = 'left'; // Reset
         }
       } else {
-        // Draw calm grid helper background
         ctx.strokeStyle = 'rgba(0, 245, 255, 0.02)';
         ctx.lineWidth = 1;
         for (let i = 20; i < width; i += 30) {
@@ -160,7 +147,6 @@ export const ZKProver = () => {
           ctx.stroke();
         }
 
-        // Idle calm holographic scan bar
         ctx.strokeStyle = 'rgba(0, 245, 255, 0.15)';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -175,7 +161,6 @@ export const ZKProver = () => {
         ctx.fillText(`TARGET: xlayer_mainnet_${XLAYER_CHAIN_ID}`, 20, 45);
         ctx.fillText(`VERIFIER CONTRACT: ${CONTRACT_ADDRESSES.ZKVerifier.substring(0, 8)}...`, 20, 60);
 
-        // Core visual target in Standby mode
         ctx.strokeStyle = 'rgba(0, 245, 255, 0.25)';
         ctx.beginPath();
         ctx.arc(coreX + 110, coreY, 20, 0, Math.PI * 2);
@@ -205,7 +190,6 @@ export const ZKProver = () => {
       boxShadow: isZKProving ? '0 0 20px rgba(168, 255, 53, 0.15)' : 'none'
     }}>
       
-      {/* Header HUD */}
       <div className="flex justify-between items-center border-b border-zinc-800/80 pb-3 mb-4">
         <div className="flex items-center gap-2 text-glow-green text-[#A8FF35]">
           <Cpu className={isZKProving ? "animate-spin text-[#A8FF35]" : "text-[#A8FF35]"} size={16} />
@@ -218,7 +202,6 @@ export const ZKProver = () => {
 
       <div className="flex flex-col gap-4">
         
-        {/* Top visual graphic component */}
         <div className="flex justify-center bg-black rounded-lg border border-zinc-900 relative overflow-hidden h-[100px]">
           <canvas ref={canvasRef} className="block w-full h-full" />
           
@@ -231,7 +214,6 @@ export const ZKProver = () => {
           )}
         </div>
 
-        {/* Terminal Console Logs */}
         <div className="flex flex-col gap-1.5">
           <label className="hud-label"><Terminal size={12} /> Cryptographic Proof Pipeline Logs</label>
           <div ref={terminalLogRef} className="zk-terminal-log" style={{ height: '140px' }}>
@@ -247,7 +229,6 @@ export const ZKProver = () => {
         </div>
 
 
-        {/* Bottom actions */}
         {isZKProving && (
           <div className="flex justify-between items-center gap-3 bg-[#121214]/80 border border-zinc-800/80 rounded-lg p-3 font-mono text-3xs">
             <div className="flex-1 min-w-0">

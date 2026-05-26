@@ -77,14 +77,14 @@ function App() {
           >
             <img
               src="/zk-var-logo.svg"
-              alt="ZK-VAR Sovereign Referee Arena"
+              alt="ZK-VAR"
               className="header-brand-logo"
             />
           </button>
         </div>
 
         <div className="header-center text-glow-cyan">
-          X CUP | WORLD CUP VAR MARKETS | X LAYER
+          X CUP | WORLD CUP VAR MARKETS | X LAYER MAINNET
         </div>
 
         <div className="header-right">
@@ -95,7 +95,7 @@ function App() {
       <div className="live-status-ticker">
         <div className="live-status-ticker-left">
           <span className="flex items-center gap-1 text-[#00F5FF]">
-            <Activity size={10} className="animate-pulse" /> LIVE ON-CHAIN ARENA
+            <Activity size={10} className="animate-pulse" /> LIVE ON-CHAIN MARKETS
           </span>
           <span className="text-zinc-700">|</span>
           <span className="text-white flex items-center gap-1">
@@ -150,7 +150,7 @@ function App() {
                   <span>Predict</span>
                   <strong>Stake on live calls</strong>
                   <span>Dispute</span>
-                  <strong>Fan jury consensus</strong>
+                  <strong>Staked jury consensus</strong>
                   <span>Verify</span>
                   <strong>Owner/oracle ZK flow</strong>
                   <span>Claim</span>
@@ -173,7 +173,7 @@ function App() {
               <article className="glass-panel feature-card">
                 <Cpu className="text-[#A8FF35]" size={20} />
                 <h3>ZK Referee Pipeline</h3>
-                <p>The proof panel demonstrates how verifiable referee decisions can be coordinated with an SP1-style ZK workflow.</p>
+                <p>The settlement flow requests an SP1 proof, commits the source-data hash, and verifies the proof on-chain.</p>
               </article>
               <article className="glass-panel feature-card">
                 <Gift className="text-[#00F5FF]" size={20} />
@@ -214,7 +214,7 @@ function App() {
               <ShieldAlert className="text-[#FFD60A] shrink-0" size={18} />
               <div className="warning-banner-text">
                 <p>
-                  <strong className="text-[#FFD60A]">VAR PROTOCOL ACTIVE:</strong> Play ID #{activePlayId} is selected for computational review. Jury consensus can form here.
+                  <strong className="text-[#FFD60A]">VAR REVIEW ACTIVE:</strong> Play ID #{activePlayId} is selected for review. Jury consensus can form here.
                 </p>
                 <span className="text-glow-cyan text-[#00F5FF] shrink-0 font-bold ml-2">
                   SP1 VERIFIER CONTRACT ONLINE
@@ -225,13 +225,13 @@ function App() {
             <div className="split-page-grid">
               <section className="flex flex-col">
                 <h2 className="section-title">
-                  <Trophy size={14} className="text-[#A8FF35]" /> Spatial Camera Feed
+                  <Trophy size={14} className="text-[#A8FF35]" /> Review Feed
                 </h2>
                 <VARPanel activePlayId={activePlayId} />
               </section>
               <section className="flex flex-col">
                 <h2 className="section-title">
-                  <ShieldCheck size={14} className="text-[#00F5FF]" /> Decentralized Tribunal
+                  <ShieldCheck size={14} className="text-[#00F5FF]" /> Dispute Tribunal
                 </h2>
                 <JuryVote activePlayId={activePlayId} />
               </section>
@@ -285,7 +285,7 @@ function App() {
         </div>
 
         <div className="app-footer-status">
-          <span>SP1 verifier: SECURE</span>
+          <span>SP1 verifier: configured</span>
           <span>Settlement token: OKB</span>
           <span>v1.0.0</span>
         </div>

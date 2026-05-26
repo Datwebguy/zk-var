@@ -21,19 +21,15 @@ export const VARPanel = ({ activePlayId = 101 }) => {
     let animId;
     let isVisible = true;
 
-    // Use IntersectionObserver to pause heavy canvas draws when off-screen
     const observer = new IntersectionObserver(([entry]) => {
       isVisible = entry.isIntersecting;
     }, { threshold: 0.1 });
 
     observer.observe(canvas);
 
-    // Set fixed high-res 16:9 coordinates coordinate space internally
     const width = (canvas.width = 960);
     const height = (canvas.height = 540);
 
-    // Procedural coordinates for the plays scaled to 960x540 (16:9)
-    // Play 101: Offside check on attacker
     const play101 = {
       players: [
         { x: 240, y: 240, r: 10, label: 'Attacker (Messi)', team: 'A', isTarget: true },
@@ -41,17 +37,16 @@ export const VARPanel = ({ activePlayId = 101 }) => {
         { x: 310, y: 330, r: 10, label: 'Defender 2 (Varane)', team: 'D', isTarget: false },
         { x: 100, y: 270, r: 12, label: 'Goalkeeper (Lloris)', team: 'D', isTarget: false }
       ],
-      offsideLineX: 300, // Position of last defender
+      offsideLineX: 300,
       ball: { x: 500, y: 150, targetX: 240, targetY: 240 }
     };
 
-    // Play 102: Touchline / Out of bounds check
     const play102 = {
       players: [
         { x: 820, y: 120, r: 10, label: 'Winger (Mbappe)', team: 'A', isTarget: true },
         { x: 780, y: 165, r: 10, label: 'Defender (Molina)', team: 'D', isTarget: false }
       ],
-      offsideLineX: 840, // Represents touchline
+      offsideLineX: 840,
       ball: { x: 660, y: 330, targetX: 830, targetY: 110 }
     };
 
@@ -60,13 +55,12 @@ export const VARPanel = ({ activePlayId = 101 }) => {
 
     const drawVAR = () => {
       animId = requestAnimationFrame(drawVAR);
-      if (!isVisible) return; // Skip rendering when offscreen
+      if (!isVisible) return;
 
       frame++;
       ctx.fillStyle = '#121214';
       ctx.fillRect(0, 0, width, height);
 
-      // 1. Draw glowing grid fields representing spatial camera calibrations
       ctx.strokeStyle = 'rgba(168, 255, 53, 0.03)';
       ctx.lineWidth = 1;
       const step = 25;
@@ -83,17 +77,13 @@ export const VARPanel = ({ activePlayId = 101 }) => {
         ctx.stroke();
       }
 
-      // 2. Draw Pitch Boundary Lines (glowing perspective field)
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 2;
       
-      // Touchline / Penalty box outlines depending on active play
       if (activePlayId === 101) {
-        // Goal box left side
         ctx.strokeRect(-50, 90, 240, 360);
         ctx.strokeRect(-50, 165, 110, 210);
       } else {
-        // Touchline right corner
         ctx.beginPath();
         ctx.moveTo(530, 60);
         ctx.lineTo(930, 60);
@@ -101,7 +91,7 @@ export const VARPanel = ({ activePlayId = 101 }) => {
         ctx.stroke();
       }
 
-      // 3. Draw ZK-AI Offside Line / Boundary Plane (Neon green/cyan scanner laser)
+      // Draw the selected review line or boundary plane.
       const laserX = currentPlay.offsideLineX;
       ctx.shadowBlur = 15;
       ctx.shadowColor = activePlayId === 101 ? '#A8FF35' : '#00F5FF';
@@ -112,13 +102,11 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       ctx.moveTo(laserX, 30);
       ctx.lineTo(laserX, height - 30);
       ctx.stroke();
-      ctx.shadowBlur = 0; // Reset glow shadow
+      ctx.shadowBlur = 0;
 
-      // Draw secondary indicator grid
       ctx.fillStyle = activePlayId === 101 ? 'rgba(168, 255, 53, 0.04)' : 'rgba(0, 245, 255, 0.04)';
       ctx.fillRect(0, 30, laserX, height - 60);
 
-      // 4. Draw Ball Trajectory vector (glowing dotted bezier curve)
       ctx.setLineDash([4, 4]);
       ctx.strokeStyle = '#00F5FF';
       ctx.lineWidth = 2;
@@ -131,9 +119,8 @@ export const VARPanel = ({ activePlayId = 101 }) => {
         currentPlay.ball.targetY
       );
       ctx.stroke();
-      ctx.setLineDash([]); // Reset dash
+      ctx.setLineDash([]);
 
-      // Dynamic animated ball along the vector
       const progress = (frame % 150) / 150;
       const bx = currentPlay.ball.x + (currentPlay.ball.targetX - currentPlay.ball.x) * progress;
       const by = currentPlay.ball.y + (currentPlay.ball.targetY - currentPlay.ball.y) * progress - Math.sin(progress * Math.PI) * 75;
@@ -146,7 +133,6 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // 5. Draw Players
       currentPlay.players.forEach(p => {
         const isAttacker = p.team === 'A';
         ctx.fillStyle = isAttacker ? '#00F5FF' : '#FFFFFF';
@@ -155,14 +141,13 @@ export const VARPanel = ({ activePlayId = 101 }) => {
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
 
-        // Outer telemetry rings
         ctx.strokeStyle = isAttacker ? 'rgba(0, 245, 255, 0.3)' : 'rgba(255, 255, 255, 0.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r + 5 + Math.sin(frame * 0.05) * 3, 0, Math.PI * 2);
         ctx.stroke();
 
-        // AI Bounding box Lock-On for target players
+        // Highlight target players for the selected review.
         if (p.isTarget) {
           const size = 35 + Math.sin(frame * 0.08) * 4;
           ctx.strokeStyle = '#A8FF35';
@@ -177,7 +162,6 @@ export const VARPanel = ({ activePlayId = 101 }) => {
           ctx.fillText("TARGET LOCK [ZK_CORE]", p.x + size / 2 + 6, p.y - 2);
           ctx.shadowBlur = 0;
 
-          // Draw dotted distance marker line to VAR plane
           ctx.setLineDash([2, 2]);
           ctx.strokeStyle = '#A8FF35';
           ctx.beginPath();
@@ -187,13 +171,11 @@ export const VARPanel = ({ activePlayId = 101 }) => {
           ctx.setLineDash([]);
         }
 
-        // Mini player names
         ctx.fillStyle = '#8E8E93';
         ctx.font = '500 10px monospace';
         ctx.fillText(p.label, p.x - 25, p.y - 15);
       });
 
-      // 6. Draw Spatial Scanning UI overlays
       ctx.fillStyle = '#A8FF35';
       ctx.font = '600 12px monospace';
       ctx.fillText(`CAM_1: ZK_VAR_CHECK // PLAY_${activePlayId}`, 30, 45);
@@ -201,7 +183,6 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       ctx.strokeStyle = 'rgba(168, 255, 53, 0.3)';
       ctx.strokeRect(15, 15, width - 30, height - 30);
 
-      // Draw active scanner grid corners
       const borderLen = 20;
       ctx.strokeStyle = '#A8FF35';
       ctx.lineWidth = 2.5;
@@ -244,7 +225,6 @@ export const VARPanel = ({ activePlayId = 101 }) => {
     <div className="glass-panel p-6 scanline-overlay flex flex-col gap-6" style={{ width: '100%' }}>
       <div className="flex flex-col xl:flex-row gap-6">
         
-        {/* Procedural Spatial Rebuilder Canvas */}
         <div className="flex-1 bg-black rounded-lg overflow-hidden relative" style={{
           width: '100%',
           aspectRatio: '16/9',
@@ -261,7 +241,6 @@ export const VARPanel = ({ activePlayId = 101 }) => {
           </div>
         </div>
 
-        {/* Telemetry Dashboard Data */}
         <div className="w-full xl:w-64 flex flex-col justify-between gap-4 font-mono">
           <div className="border border-zinc-800 rounded-lg p-4 bg-[#121214]/50 flex flex-col gap-4">
             <h4 className="text-glow-green text-[#A8FF35] text-xs font-heading font-bold uppercase tracking-wider flex items-center gap-1.5">

@@ -1,8 +1,7 @@
 # Real ZK Referee Pipeline
 
-ZK-VAR no longer accepts browser-generated mock proof bytes in the settlement path.
-The app now expects a real prover service and a verifier contract configured with a
-nonzero SP1 program verification key.
+ZK-VAR settlement uses a real prover service and a verifier contract configured
+with a nonzero SP1 program verification key.
 
 ## Required External Pieces
 
@@ -46,15 +45,12 @@ nonzero SP1 program verification key.
 6. The SP1 verifier verifies the proof.
 7. `DisputeRegistry` resolves the dispute and linked prediction pool.
 
-## What Still Needs Real-World Configuration
+## Production Configuration
 
-- Final sports data provider/API and credentials.
-- SP1 guest program source and generated `SP1_PROGRAM_VKEY`.
 - Sportradar API key and `SPORTRADAR_SPORT_EVENT_MAP` play-to-match mapping.
 - Prover backend deployment URL for `SP1_PROVER_URL`.
-- Linux/WSL2/Docker host for the SP1 prover. The SP1 SDK does not compile as a native
-  Windows prover in this project because its JIT/shared-memory dependencies are Unix-oriented.
-- Fresh contract deployment addresses after replacing the old mock-enabled verifier.
-- Vercel environment variables updated to point to the prover API and new contracts:
+- Funded Succinct prover account for proof generation.
+- Vercel environment variables pointing to the prover API and deployed contracts:
   `VITE_ZK_VERIFIER_ADDRESS`, `VITE_DISPUTE_REGISTRY_ADDRESS`, and
   `VITE_PREDICTION_POOL_ADDRESS`.
+- X Layer mainnet contract addresses matching the current deployment.

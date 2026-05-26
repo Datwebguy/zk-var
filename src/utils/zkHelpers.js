@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
  * @notice Encodes the public values to match Solidity's abi.encode(uint256, bool, bytes32)
  * @dev This guarantees that the publicValues bytes payload matches exactly what is expected by ZKVerifier.sol
  * @param playId The ID of the play being disputed.
- * @param isOffside The deterministic AI verdict (true/false).
+ * @param isOffside The verifier verdict (true/false).
  * @param dataHash The committed hash of the match/event data used by the SP1 guest.
  */
 export const encodePublicValues = (playId, isOffside, dataHash) => {

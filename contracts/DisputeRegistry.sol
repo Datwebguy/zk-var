@@ -153,10 +153,10 @@ contract DisputeRegistry is DisputeReentrancyGuard {
     }
 
     /**
-     * @notice Resolves the dispute using a verified ZK-AI proof from the ZKVerifier.
+     * @notice Resolves the dispute using a verified SP1 proof from the ZKVerifier.
      * @dev Only callable by the ZKVerifier contract. Overrides any ongoing fan voting.
      * @param _playId The ID of the play.
-     * @param _isOffside The verified AI referee result.
+     * @param _isOffside The verified referee-review result.
      */
     function resolveFromVerifier(uint256 _playId, bool _isOffside) external onlyVerifier {
         Dispute storage dispute = disputes[_playId];
@@ -175,11 +175,11 @@ contract DisputeRegistry is DisputeReentrancyGuard {
         emit DisputeResolved(_playId, DisputeStatus.ResolvedByZK, finalVerdict);
         emit VerdictFinalized(_playId, finalVerdict, msg.sender);
 
-        // Map Verdict to PredictionPool outcomes
+        // Map the verdict to PredictionPool outcomes.
         // 1 = Valid/Yes (e.g. Offside happened), 2 = Invalid/No
         uint8 winningOutcome = _isOffside ? 1 : 2;
 
-        // Resolve the prediction pool associated with this dispute
+        // Resolve the prediction pool associated with this dispute.
         if (predictionPool != address(0)) {
             IPredictionPool(predictionPool).resolvePrediction(dispute.predictionPoolId, winningOutcome);
         }
@@ -248,7 +248,6 @@ contract DisputeRegistry is DisputeReentrancyGuard {
 
         uint256 payoutAmount;
         if (winningChoice == VoteChoice.Inconclusive || winningWeight == 0) {
-            // Refund 100% of user's original stake
             payoutAmount = userVote.stake;
         } else {
             require(userVote.choice == winningChoice, "Voted for the losing verdict");
@@ -280,7 +279,7 @@ contract DisputeRegistry is DisputeReentrancyGuard {
         uint256 unclaimed = dispute.totalJuryStaked - dispute.totalJuryClaimed;
         require(unclaimed > 0, "No unclaimed funds remaining");
 
-        dispute.totalJuryClaimed = dispute.totalJuryStaked; // Mark all as claimed to prevent double recovery
+        dispute.totalJuryClaimed = dispute.totalJuryStaked;
 
         (bool success, ) = payable(owner).call{value: unclaimed}("");
         require(success, "Recovery transfer failed");
@@ -288,7 +287,6 @@ contract DisputeRegistry is DisputeReentrancyGuard {
         emit FundsRecovered(_playId, unclaimed);
     }
 
-    // Helper to get dispute information
     function getDisputeDetails(uint256 _playId) external view returns (
         uint256 predictionPoolId,
         string memory description,
