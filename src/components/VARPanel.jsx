@@ -1,7 +1,72 @@
 import { useEffect, useRef, useState } from 'react';
 import { Shield, Target, Zap, Cpu } from 'lucide-react';
+import { DEFAULT_PROVEN_PLAY_ID, getProvenMarketByPlayId } from '../config/provenMarkets';
 
-export const VARPanel = ({ activePlayId = 101 }) => {
+const REVIEW_SCENES = {
+  103: {
+    lineLabel: 'offside review plane',
+    proofLabel: 'offside proof required',
+    highlightColor: '#A8FF35',
+    players: [
+      { x: 240, y: 240, r: 10, label: 'Mexico attacker', team: 'A', isTarget: true },
+      { x: 300, y: 195, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
+      { x: 310, y: 330, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
+      { x: 100, y: 270, r: 12, label: 'South Africa goalkeeper', team: 'D', isTarget: false }
+    ],
+    offsideLineX: 300,
+    ball: { x: 500, y: 150, targetX: 240, targetY: 240 }
+  },
+  104: {
+    lineLabel: 'goal review plane',
+    proofLabel: 'goal review proof required',
+    highlightColor: '#00F5FF',
+    players: [
+      { x: 745, y: 265, r: 10, label: 'Mexico scorer', team: 'A', isTarget: true },
+      { x: 805, y: 220, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
+      { x: 875, y: 270, r: 12, label: 'South Africa goalkeeper', team: 'D', isTarget: false }
+    ],
+    offsideLineX: 800,
+    ball: { x: 620, y: 180, targetX: 865, targetY: 270 }
+  },
+  105: {
+    lineLabel: 'penalty area review',
+    proofLabel: 'penalty proof required',
+    highlightColor: '#A8FF35',
+    players: [
+      { x: 715, y: 340, r: 10, label: 'Mexico forward', team: 'A', isTarget: true },
+      { x: 690, y: 322, r: 10, label: 'South Africa marker', team: 'D', isTarget: false },
+      { x: 855, y: 270, r: 12, label: 'South Africa goalkeeper', team: 'D', isTarget: false }
+    ],
+    offsideLineX: 705,
+    ball: { x: 600, y: 405, targetX: 715, targetY: 340 }
+  },
+  106: {
+    lineLabel: 'serious foul review',
+    proofLabel: 'red-card proof required',
+    highlightColor: '#FF453A',
+    players: [
+      { x: 500, y: 290, r: 10, label: 'Mexico midfielder', team: 'A', isTarget: true },
+      { x: 535, y: 285, r: 10, label: 'South Africa tackler', team: 'D', isTarget: false },
+      { x: 430, y: 240, r: 10, label: 'Mexico support run', team: 'A', isTarget: false }
+    ],
+    offsideLineX: 520,
+    ball: { x: 390, y: 255, targetX: 500, targetY: 290 }
+  },
+  107: {
+    lineLabel: 'multi-review timeline',
+    proofLabel: 'review-count proof required',
+    highlightColor: '#00F5FF',
+    players: [
+      { x: 315, y: 225, r: 10, label: 'Mexico attacker', team: 'A', isTarget: true },
+      { x: 600, y: 320, r: 10, label: 'South Africa defender', team: 'D', isTarget: true },
+      { x: 790, y: 245, r: 12, label: 'South Africa goalkeeper', team: 'D', isTarget: false }
+    ],
+    offsideLineX: 455,
+    ball: { x: 540, y: 130, targetX: 315, targetY: 225 }
+  }
+};
+
+export const VARPanel = ({ activePlayId = DEFAULT_PROVEN_PLAY_ID }) => {
   const canvasRef = useRef(null);
   const [telemetry, setTelemetry] = useState({
     attackerSpeed: 'provider input',
@@ -30,27 +95,8 @@ export const VARPanel = ({ activePlayId = 101 }) => {
     const width = (canvas.width = 960);
     const height = (canvas.height = 540);
 
-    const play101 = {
-      players: [
-        { x: 240, y: 240, r: 10, label: 'Mexico attacker', team: 'A', isTarget: true },
-        { x: 300, y: 195, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
-        { x: 310, y: 330, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
-        { x: 100, y: 270, r: 12, label: 'South Africa goalkeeper', team: 'D', isTarget: false }
-      ],
-      offsideLineX: 300,
-      ball: { x: 500, y: 150, targetX: 240, targetY: 240 }
-    };
-
-    const play102 = {
-      players: [
-        { x: 820, y: 120, r: 10, label: 'Mexico winger', team: 'A', isTarget: true },
-        { x: 780, y: 165, r: 10, label: 'South Africa defender', team: 'D', isTarget: false }
-      ],
-      offsideLineX: 840,
-      ball: { x: 660, y: 330, targetX: 830, targetY: 110 }
-    };
-
-    const currentPlay = activePlayId === 101 ? play101 : play102;
+    const currentPlay = REVIEW_SCENES[activePlayId] || REVIEW_SCENES[DEFAULT_PROVEN_PLAY_ID];
+    const market = getProvenMarketByPlayId(activePlayId);
     let frame = 0;
 
     const drawVAR = () => {
@@ -80,7 +126,7 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 2;
       
-      if (activePlayId === 101) {
+      if (activePlayId === 103) {
         ctx.strokeRect(-50, 90, 240, 360);
         ctx.strokeRect(-50, 165, 110, 210);
       } else {
@@ -94,8 +140,8 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       // Draw the selected review line or boundary plane.
       const laserX = currentPlay.offsideLineX;
       ctx.shadowBlur = 15;
-      ctx.shadowColor = activePlayId === 101 ? '#A8FF35' : '#00F5FF';
-      ctx.strokeStyle = activePlayId === 101 ? 'rgba(168, 255, 53, 0.8)' : 'rgba(0, 245, 255, 0.8)';
+      ctx.shadowColor = currentPlay.highlightColor;
+      ctx.strokeStyle = currentPlay.highlightColor;
       ctx.lineWidth = 3;
       
       ctx.beginPath();
@@ -104,7 +150,7 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      ctx.fillStyle = activePlayId === 101 ? 'rgba(168, 255, 53, 0.04)' : 'rgba(0, 245, 255, 0.04)';
+      ctx.fillStyle = currentPlay.highlightColor === '#00F5FF' ? 'rgba(0, 245, 255, 0.04)' : 'rgba(168, 255, 53, 0.04)';
       ctx.fillRect(0, 30, laserX, height - 60);
 
       ctx.setLineDash([4, 4]);
@@ -178,7 +224,7 @@ export const VARPanel = ({ activePlayId = 101 }) => {
 
       ctx.fillStyle = '#A8FF35';
       ctx.font = '600 12px monospace';
-      ctx.fillText(`CAM_1: ZK_VAR_CHECK // PLAY_${activePlayId}`, 30, 45);
+      ctx.fillText(`CAM_1: ${currentPlay.lineLabel.toUpperCase()} // PLAY_${activePlayId}`, 30, 45);
       
       ctx.strokeStyle = 'rgba(168, 255, 53, 0.3)';
       ctx.strokeRect(15, 15, width - 30, height - 30);
@@ -205,10 +251,10 @@ export const VARPanel = ({ activePlayId = 101 }) => {
       if (frame % 30 === 0) {
         setTelemetry({
           attackerSpeed: 'provider input',
-          distanceToLine: activePlayId === 101 ? 'offside proof required' : 'boundary proof required',
+          distanceToLine: currentPlay.proofLabel,
           ballVelocity: 'provider input',
           inferenceConfidence: 'verified on-chain',
-          frameId: `PLAY_${activePlayId}`
+          frameId: market ? `${market.eventType}` : `PLAY_${activePlayId}`
         });
       }
     };

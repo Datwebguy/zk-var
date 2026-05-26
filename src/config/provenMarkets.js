@@ -39,3 +39,11 @@ export const PROVEN_WORLD_CUP_MARKETS = [
 export const getProvenMarketByPlayId = (playId) => (
   PROVEN_WORLD_CUP_MARKETS.find((market) => market.playId === Number(playId))
 );
+
+export const getProvenMarketByPoolId = (poolId) => (
+  PROVEN_WORLD_CUP_MARKETS.find((market) => market.poolId === Number(poolId))
+);
+
+export const PROVEN_WORLD_CUP_POOL_IDS = PROVEN_WORLD_CUP_MARKETS.map((market) => market.poolId);
+export const PROVEN_WORLD_CUP_PLAY_IDS = PROVEN_WORLD_CUP_MARKETS.map((market) => market.playId);
+export const DEFAULT_PROVEN_PLAY_ID = PROVEN_WORLD_CUP_MARKETS[0].playId;

@@ -11,6 +11,11 @@ const XLAYER_RPC_URLS = [
   'https://xlayerrpc.okx.com'
 ].filter(Boolean);
 
+const PROVEN_POOL_IDS = [3, 4, 5, 6, 7];
+const PROVEN_PLAY_IDS = [103, 104, 105, 106, 107];
+const LEGACY_CLAIM_POOL_IDS = [1, 2];
+const LEGACY_CLAIM_PLAY_IDS = [101, 102];
+
 const PREDICTION_POOL_ABI = [
   'function getPoolDetails(uint256 _poolId) view returns (string memory question, uint256 closingTime, uint8 status, uint8 winningOutcome, uint256 totalStaked, uint256 stakedOutcome1, uint256 stakedOutcome2, uint256 resolutionTime)'
 ];
@@ -47,7 +52,7 @@ const withProviderFallback = async (readFn) => {
 
 const fetchPools = async (provider) => {
   const contract = new ethers.Contract(CONTRACT_ADDRESSES.PredictionPool, PREDICTION_POOL_ABI, provider);
-  const poolIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const poolIds = [...LEGACY_CLAIM_POOL_IDS, ...PROVEN_POOL_IDS];
 
   const pools = await Promise.all(poolIds.map(async (id) => {
     try {
@@ -77,7 +82,7 @@ const fetchPools = async (provider) => {
 
 const fetchDisputes = async (provider) => {
   const contract = new ethers.Contract(CONTRACT_ADDRESSES.DisputeRegistry, DISPUTE_REGISTRY_ABI, provider);
-  const disputeIds = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110];
+  const disputeIds = [...LEGACY_CLAIM_PLAY_IDS, ...PROVEN_PLAY_IDS];
 
   const disputes = await Promise.all(disputeIds.map(async (id) => {
     try {

@@ -8,6 +8,7 @@ import { ZKProver } from './components/ZKProver';
 import { AdminPanel } from './components/AdminPanel';
 import { TransactionHistory } from './components/TransactionHistory';
 import { ClaimCenter } from './components/ClaimCenter';
+import { DEFAULT_PROVEN_PLAY_ID } from './config/provenMarkets';
 import { usePrediction } from './hooks/usePrediction';
 import { useAppStore } from './store/useAppStore';
 import {
@@ -29,7 +30,7 @@ import './styles/animations.css';
 import './styles/components.css';
 
 function App() {
-  const [activePlayId, setActivePlayId] = useState(101);
+  const [activePlayId, setActivePlayId] = useState(DEFAULT_PROVEN_PLAY_ID);
   const [activePage, setActivePage] = useState('home');
   const { fetchPredictionPools, fetchDisputes } = usePrediction();
   const { userAddress, walletConnected, contractOwner } = useAppStore();

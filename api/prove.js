@@ -217,7 +217,7 @@ export default async function handler(req, res) {
     }
 
     const sportEventMap = parseSportEventMap();
-    const sportEventId = sportEventMap[String(normalizedPlayId)] || sportEventMap.opening_match || sportEventMap['101'];
+    const sportEventId = sportEventMap[String(normalizedPlayId)] || sportEventMap.opening_match || sportEventMap['103'];
     if (!sportEventId) {
       jsonResponse(res, 400, {
         error: `No Sportradar sport_event_id configured for playId ${normalizedPlayId}.`

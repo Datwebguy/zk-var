@@ -15,6 +15,7 @@ import {
   logRpcError
 } from '../utils/contractHelpers';
 import { savePersonalTransaction } from '../utils/transactionHistory';
+import { PROVEN_WORLD_CUP_PLAY_IDS, PROVEN_WORLD_CUP_POOL_IDS } from '../config/provenMarkets';
 
 let cache = {
   pools: null,
@@ -24,6 +25,8 @@ let cache = {
 };
 
 const STALE_TIME = 15000;
+const LEGACY_CLAIM_POOL_IDS = [1, 2];
+const LEGACY_CLAIM_PLAY_IDS = [101, 102];
 let activeRpcIndex = 0;
 
 const rotateRpcUrl = () => {
@@ -204,7 +207,7 @@ export const usePrediction = () => {
       const contract = await getContract('PredictionPool');
       if (!contract) return;
 
-      const poolIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const poolIds = [...new Set([...LEGACY_CLAIM_POOL_IDS, ...PROVEN_WORLD_CUP_POOL_IDS])];
       const results = await Promise.all(poolIds.map(async (id) => {
         try {
           const details = await contract.getPoolDetails(id);
@@ -263,7 +266,7 @@ export const usePrediction = () => {
       const contract = await getContract('DisputeRegistry');
       if (!contract) return;
 
-      const disputeIds = [101, 102, 103, 104, 105, 106, 107, 108, 109, 110];
+      const disputeIds = [...new Set([...LEGACY_CLAIM_PLAY_IDS, ...PROVEN_WORLD_CUP_PLAY_IDS])];
       const results = await Promise.all(disputeIds.map(async (id) => {
         try {
           const details = await contract.getDisputeDetails(id);

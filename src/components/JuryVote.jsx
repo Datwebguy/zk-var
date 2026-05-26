@@ -3,9 +3,10 @@ import { usePrediction } from '../hooks/usePrediction';
 import { useZKProof } from '../hooks/useZKProof';
 import { useWallet } from '../hooks/useWallet';
 import { useAppStore } from '../store/useAppStore';
+import { DEFAULT_PROVEN_PLAY_ID, PROVEN_WORLD_CUP_PLAY_IDS } from '../config/provenMarkets';
 import { Shield, Sparkles, Scale, Info, HelpCircle } from 'lucide-react';
 
-export const JuryVote = ({ activePlayId = 101 }) => {
+export const JuryVote = ({ activePlayId = DEFAULT_PROVEN_PLAY_ID }) => {
   const { disputes, userDisputeVotes, castJuryVote, claimJuryRewards, loading } = usePrediction();
   const { generateAndVerifyProof, isZKProving, txLoading } = useZKProof();
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
@@ -14,7 +15,9 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   const [voteChoice, setVoteChoice] = useState(1);
   const [stakeAmount, setStakeAmount] = useState('0.015');
 
-  const dispute = disputes.find(d => d.playId === activePlayId) || disputes[0];
+  const provenPlayIds = new Set(PROVEN_WORLD_CUP_PLAY_IDS);
+  const visibleDisputes = disputes.filter((disputeRecord) => provenPlayIds.has(Number(disputeRecord.playId)));
+  const dispute = visibleDisputes.find(d => d.playId === activePlayId) || visibleDisputes[0];
   const selectedPlayId = dispute?.playId ?? activePlayId;
   const userVote = dispute ? userDisputeVotes[dispute.playId] : null;
   const userVoteStake = parseFloat(userVote?.stake || '0') || 0;
