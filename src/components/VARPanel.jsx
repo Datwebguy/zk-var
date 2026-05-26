@@ -32,10 +32,10 @@ export const VARPanel = ({ activePlayId = 101 }) => {
 
     const play101 = {
       players: [
-        { x: 240, y: 240, r: 10, label: 'Attacker (Messi)', team: 'A', isTarget: true },
-        { x: 300, y: 195, r: 10, label: 'Defender 1 (Upamecano)', team: 'D', isTarget: false },
-        { x: 310, y: 330, r: 10, label: 'Defender 2 (Varane)', team: 'D', isTarget: false },
-        { x: 100, y: 270, r: 12, label: 'Goalkeeper (Lloris)', team: 'D', isTarget: false }
+        { x: 240, y: 240, r: 10, label: 'Mexico attacker', team: 'A', isTarget: true },
+        { x: 300, y: 195, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
+        { x: 310, y: 330, r: 10, label: 'South Africa defender', team: 'D', isTarget: false },
+        { x: 100, y: 270, r: 12, label: 'South Africa goalkeeper', team: 'D', isTarget: false }
       ],
       offsideLineX: 300,
       ball: { x: 500, y: 150, targetX: 240, targetY: 240 }
@@ -43,8 +43,8 @@ export const VARPanel = ({ activePlayId = 101 }) => {
 
     const play102 = {
       players: [
-        { x: 820, y: 120, r: 10, label: 'Winger (Mbappe)', team: 'A', isTarget: true },
-        { x: 780, y: 165, r: 10, label: 'Defender (Molina)', team: 'D', isTarget: false }
+        { x: 820, y: 120, r: 10, label: 'Mexico winger', team: 'A', isTarget: true },
+        { x: 780, y: 165, r: 10, label: 'South Africa defender', team: 'D', isTarget: false }
       ],
       offsideLineX: 840,
       ball: { x: 660, y: 330, targetX: 830, targetY: 110 }

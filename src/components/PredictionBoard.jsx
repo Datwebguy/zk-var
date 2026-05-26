@@ -8,10 +8,9 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
   const [selectedPoolId, setSelectedPoolId] = useState(1);
-  const [selectedOutcome, setSelectedOutcome] = useState(1); // 1 = Yes (Valid), 2 = No (Invalid)
+  const [selectedOutcome, setSelectedOutcome] = useState(1);
   const [stakeAmount, setStakeAmount] = useState('0.015');
 
-  // Static pre-transaction calculations
   const visiblePredictionPools = predictionPools;
   const selectedPool = visiblePredictionPools.find(p => p.poolId === selectedPoolId) || visiblePredictionPools[0];
   const poolStakedOutcome1 = selectedPool ? parseFloat(selectedPool.stakedOutcome1) || 0 : 0;
@@ -63,7 +62,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
 
   const calculatedPayout = estimateReturn(selectedOutcome);
 
-  // Handle betting prediction submission
   const handleSubmitPrediction = async () => {
     if (!walletConnected) {
       await connectWallet('metamask');
@@ -92,7 +90,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   return (
     <div className="prediction-board-layout">
       
-      {/* 1. Prediction Pools Market Lists (Rendered as Card Grid) */}
       <div className="prediction-pools-section">
         <h3 className="section-title">
           <TrendingUp size={16} /> Active Prediction Pools (OKB)
@@ -152,7 +149,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                     minHeight: '220px'
                   }}
                 >
-                  {/* Header info */}
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex flex-col">
                       <span className="all-caps-label mb-1">
@@ -167,14 +163,12 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                     </span>
                   </div>
 
-                  {/* YES/NO percentage bar (neon-green fill) */}
                   <div className="flex flex-col gap-2 text-3xs font-mono text-zinc-400">
                     <div className="flex justify-between font-bold">
-                      <span>YES (OFFSIDE): {pctOutcome1}% ({pool.stakedOutcome1} OKB)</span>
-                      <span>NO (ONSIDE): {pctOutcome2}% ({pool.stakedOutcome2} OKB)</span>
+                      <span>YES: {pctOutcome1}% ({pool.stakedOutcome1} OKB)</span>
+                      <span>NO: {pctOutcome2}% ({pool.stakedOutcome2} OKB)</span>
                     </div>
                     
-                    {/* Visual Ratio split bar with neon-green fill */}
                     <div style={{
                       height: '8px',
                       backgroundColor: '#121214',
@@ -202,7 +196,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                     </div>
                   </div>
 
-                  {/* Footer details + Selection Open Button */}
                   <div className="flex justify-between items-center text-3xs font-mono pt-3 border-t border-zinc-800/80 mt-auto">
                     <div className="flex flex-col gap-0.5">
                       <span>POOL ID: #{pool.poolId}</span>
@@ -268,7 +261,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
         </div>
       </div>
 
-      {/* 2. Fast Trade Panel (HUD) */}
       <div className="fast-trade-section">
         <h3 className="section-title text-[#00F5FF]">
           <Coins size={16} /> Prediction Panel
@@ -288,7 +280,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
           </div>
         ) : (
           <div className="fast-trade-card">
-            {/* Market selector visual */}
             <div className="font-mono text-3xs border-b border-zinc-800 pb-3">
               <span className="text-zinc-500 block mb-0.5">SELECTED POOL:</span>
               <span className="text-white font-bold line-clamp-1">{selectedPool.question}</span>
@@ -365,7 +356,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               </div>
             ) : (
               <>
-                {/* Outcome Choice togglers */}
                 <div className="flex flex-col gap-2">
                   <label className="hud-label"><HelpCircle size={14} /> Predict Outcome</label>
                   <div className="flex gap-2">
@@ -375,7 +365,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       className={`jury-vote-btn ${selectedOutcome === 1 ? 'active' : ''}`}
                       style={{ padding: '10px 12px' }}
                     >
-                      <span className="text-xs font-bold">YES / OFFSIDE</span>
+                      <span className="text-xs font-bold">YES</span>
                       <span className="text-3xs font-mono opacity-80 mt-0.5">Est return: {estimateReturn(1)} OKB</span>
                     </button>
                     <button
@@ -384,13 +374,12 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       className={`jury-vote-btn ${selectedOutcome === 2 ? 'active' : ''}`}
                       style={{ padding: '10px 12px' }}
                     >
-                      <span className="text-xs font-bold">NO / ONSIDE</span>
+                      <span className="text-xs font-bold">NO</span>
                       <span className="text-3xs font-mono opacity-80 mt-0.5">Est return: {estimateReturn(2)} OKB</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Preset Stake slider */}
                 <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
                 <label className="hud-label"><Coins size={14} /> Stake Amount</label>
@@ -420,7 +409,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               )}
                 </div>
 
-                {/* Real-time Pre-Transaction Telemetry HUD */}
                 <div className="border border-zinc-800 rounded-lg p-3 bg-black/60 font-mono text-3xs flex flex-col gap-2">
               <div className="flex justify-between text-zinc-500">
                 <span>ESTIMATED RETURN:</span>

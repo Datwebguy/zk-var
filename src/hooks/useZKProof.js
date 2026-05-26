@@ -85,7 +85,7 @@ export const useZKProof = () => {
 
         addLogLine('[ZK-VERIFIER] On-chain SP1 proof verification succeeded.');
         addLogLine(`[DISPUTE-REGISTRY] playId=${playId} status updated to ResolvedByZK.`);
-        addLogLine(`[PREDICTION-POOL] poolId=${playId - 100} resolved with outcome ${proof.isOffside ? 'Yes/Valid' : 'No/Invalid'}.`);
+        addLogLine(`[PREDICTION-POOL] poolId=${playId - 100} resolved with outcome ${proof.isOffside ? 'YES' : 'NO'}.`);
 
         if (onComplete) onComplete(tx.hash, proof);
         return { txHash: tx.hash, isOffside: proof.isOffside };

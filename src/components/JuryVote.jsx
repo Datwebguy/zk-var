@@ -44,7 +44,6 @@ export const JuryVote = ({ activePlayId = 101 }) => {
     generateAndVerifyProof(activePlayId);
   };
 
-  // Convert status code to readable badge text
   const getStatusText = (status) => {
     switch (status) {
       case 0: return 'ACTIVE';
@@ -77,10 +76,8 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   return (
     <div className="glass-panel p-6 bg-[#121214]/40 flex flex-col md:flex-row gap-6 relative overflow-hidden">
       
-      {/* Background Grid Accent overlay */}
       <div className="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-[#A8FF35]/5 to-transparent pointer-events-none" />
 
-      {/* 1. Left side: Jury status & vote form */}
       <div className="flex-1 flex flex-col justify-between gap-5">
         <div>
           <div className="flex justify-between items-center mb-2">
@@ -100,7 +97,6 @@ export const JuryVote = ({ activePlayId = 101 }) => {
           </p>
         </div>
 
-        {/* Trinary Vote Choices */}
         {!isClosed && (
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
@@ -111,7 +107,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
                   onClick={() => setVoteChoice(1)}
                   className={`jury-vote-btn ${voteChoice === 1 ? 'selected-valid' : ''}`}
                 >
-                  <span className="text-xs font-bold">VALID (OFFSIDE)</span>
+                  <span className="text-xs font-bold">VALID / YES</span>
                   <span className="text-3xs font-mono opacity-80">Choice #1</span>
                 </button>
 
@@ -120,7 +116,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
                   onClick={() => setVoteChoice(2)}
                   className={`jury-vote-btn ${voteChoice === 2 ? 'selected-invalid' : ''}`}
                 >
-                  <span className="text-xs font-bold">INVALID (ONSIDE)</span>
+                  <span className="text-xs font-bold">INVALID / NO</span>
                   <span className="text-3xs font-mono opacity-80">Choice #2</span>
                 </button>
 
@@ -135,7 +131,6 @@ export const JuryVote = ({ activePlayId = 101 }) => {
               </div>
             </div>
 
-            {/* Stake Input Slider */}
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center">
                 <label className="hud-label"><Sparkles size={14} /> Jury Weight Staked</label>
@@ -218,10 +213,8 @@ export const JuryVote = ({ activePlayId = 101 }) => {
         )}
       </div>
 
-      {/* Divider line */}
       <div className="hidden md:block w-px bg-zinc-800/80 my-2" />
 
-      {/* 2. Right side: Prover trigger & jury distributions */}
       <div className="w-full md:w-72 flex flex-col justify-between gap-5 font-mono">
         <div className="border border-zinc-800 rounded-lg p-4 bg-black/50 flex flex-col gap-3.5">
           <h4 className="text-glow-cyan text-[#00F5FF] text-xs font-heading font-bold uppercase tracking-wider flex items-center gap-1.5">
@@ -235,11 +228,11 @@ export const JuryVote = ({ activePlayId = 101 }) => {
             </div>
             <div className="h-px bg-zinc-900" />
             <div className="flex justify-between items-center text-3xs text-zinc-500">
-              <span>VALID (OFFSIDE):</span>
+              <span>VALID / YES:</span>
               <span className="text-white tabular-nums">{dispute.votesValid} OKB</span>
             </div>
             <div className="flex justify-between items-center text-3xs text-zinc-500">
-              <span>INVALID (ONSIDE):</span>
+              <span>INVALID / NO:</span>
               <span className="text-white tabular-nums">{dispute.votesInvalid} OKB</span>
             </div>
             <div className="flex justify-between items-center text-3xs text-zinc-500">
@@ -249,7 +242,6 @@ export const JuryVote = ({ activePlayId = 101 }) => {
           </div>
         </div>
 
-        {/* Dynamic SP1 pipeline launcher */}
         {!isClosed && isContractOwner ? (
           <div className="flex flex-col gap-2">
             <button
@@ -277,7 +269,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
             <span className="text-[#A8FF35] font-bold block mb-1">ZK VERDICT RESOLVED</span>
             <div className="flex justify-between">
               <span>VERIFIER DETERMINED:</span>
-              <span className="text-[#A8FF35] font-bold uppercase">{dispute.verdict === 1 ? 'OFFSIDE' : dispute.verdict === 2 ? 'ONSIDE' : 'INCONCLUSIVE'}</span>
+              <span className="text-[#A8FF35] font-bold uppercase">{dispute.verdict === 1 ? 'YES' : dispute.verdict === 2 ? 'NO' : 'INCONCLUSIVE'}</span>
             </div>
             <div className="flex justify-between">
               <span>ON-CHAIN RESOLUTION:</span>

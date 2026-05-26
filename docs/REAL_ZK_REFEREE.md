@@ -20,6 +20,9 @@ with a nonzero SP1 program verification key.
      when that variable is unset.
    - `/api/prove` fetches Sportradar Soccer v4 timelines server-side, hashes the
      canonical payload, then forwards the payload to `SP1_PROVER_URL`.
+   - Each configured `playId` maps to one proven market rule: VAR-confirmed
+     offside, goal disallowed after VAR review, penalty review, red-card review,
+     or two-or-more VAR reviews.
    - The final service response must return:
 
 ```json

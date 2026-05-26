@@ -17,19 +17,35 @@ contract InitializePoolsScript is Script {
         PredictionPool predictionPool = PredictionPool(predictionPoolAddress);
         DisputeRegistry disputeRegistry = DisputeRegistry(disputeRegistryAddress);
 
-        // 1. Create Prediction Pools on-chain
         console.log("Creating Prediction Pool 1...");
-        predictionPool.createPool(1, "Will the VAR check rule Messi's 42nd minute goal OFFSIDE?", 90 days);
+        predictionPool.createPool(1, "Will Mexico vs South Africa include a VAR-confirmed offside decision?", 90 days);
 
         console.log("Creating Prediction Pool 2...");
-        predictionPool.createPool(2, "Was the ball completely out of bounds before Mbappe's assist?", 90 days);
+        predictionPool.createPool(2, "Will Mexico vs South Africa have a goal disallowed after VAR review?", 90 days);
 
-        // 2. Create Disputes on-chain
+        console.log("Creating Prediction Pool 3...");
+        predictionPool.createPool(3, "Will Mexico vs South Africa include a penalty decision reviewed by VAR?", 90 days);
+
+        console.log("Creating Prediction Pool 4...");
+        predictionPool.createPool(4, "Will Mexico vs South Africa include a red-card VAR review?", 90 days);
+
+        console.log("Creating Prediction Pool 5...");
+        predictionPool.createPool(5, "Will Mexico vs South Africa include two or more VAR reviews?", 90 days);
+
         console.log("Creating Dispute 101...");
-        disputeRegistry.createDispute(101, 1, "Messi 42' - Possible offside detection on run-up.", 90 days);
+        disputeRegistry.createDispute(101, 1, "Opening match market. Resolves YES if the official match event feed includes a VAR-confirmed offside decision; otherwise resolves NO.", 90 days);
 
         console.log("Creating Dispute 102...");
-        disputeRegistry.createDispute(102, 2, "Mbappe 68' - Touchline check before final cross.", 90 days);
+        disputeRegistry.createDispute(102, 2, "Opening match market. Resolves YES if the official match event feed records a goal disallowed, cancelled, or overturned after VAR review; otherwise resolves NO.", 90 days);
+
+        console.log("Creating Dispute 103...");
+        disputeRegistry.createDispute(103, 3, "Opening match market. Resolves YES if the official match event feed records a penalty awarded, cancelled, confirmed, or reviewed by VAR; otherwise resolves NO.", 90 days);
+
+        console.log("Creating Dispute 104...");
+        disputeRegistry.createDispute(104, 4, "Opening match market. Resolves YES if the official match event feed records a red-card or serious-foul review by VAR; otherwise resolves NO.", 90 days);
+
+        console.log("Creating Dispute 105...");
+        disputeRegistry.createDispute(105, 5, "Opening match market. Resolves YES if the official match event feed records at least two VAR review events; otherwise resolves NO.", 90 days);
 
         vm.stopBroadcast();
         console.log("Initialization complete!");

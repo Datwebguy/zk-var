@@ -3,6 +3,29 @@ import crypto from 'node:crypto';
 const DEFAULT_LANGUAGE = 'en';
 const DEFAULT_FORMAT = 'json';
 
+const MARKET_RULES = {
+  101: {
+    eventType: 'var_confirmed_offside',
+    label: 'VAR-confirmed offside decision'
+  },
+  102: {
+    eventType: 'goal_disallowed_after_var',
+    label: 'goal disallowed after VAR review'
+  },
+  103: {
+    eventType: 'penalty_review',
+    label: 'penalty decision reviewed by VAR'
+  },
+  104: {
+    eventType: 'red_card_review',
+    label: 'red-card VAR review'
+  },
+  105: {
+    eventType: 'two_or_more_var_reviews',
+    label: 'two or more VAR reviews'
+  }
+};
+
 const jsonResponse = (res, status, payload) => {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
@@ -74,21 +97,69 @@ const textIncludes = (value, needles) => {
   return needles.some((needle) => normalized.includes(needle));
 };
 
-const eventLooksLikeVarOffside = (event) => {
-  const values = Object.values(event || {});
-  const hasVar = values.some((value) => textIncludes(value, ['var', 'video assistant']));
-  const hasOffside = values.some((value) => textIncludes(value, ['offside']));
-  const hasOverturn = values.some((value) => textIncludes(value, ['overturn', 'disallow', 'cancel', 'annul']));
-  return hasVar && hasOffside && hasOverturn;
+const flattenTextValues = (value) => {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(flattenTextValues);
+  if (value && typeof value === 'object') return Object.values(value).flatMap(flattenTextValues);
+  return [];
 };
 
-const deriveVerdict = (timeline) => {
+const getEventTextValues = (event) => flattenTextValues(event || {});
+
+const eventHasVarSignal = (event) => {
+  const values = getEventTextValues(event);
+  return values.some((value) => textIncludes(value, ['var', 'video assistant']));
+};
+
+const eventLooksLikeVarOffside = (event) => {
+  const values = getEventTextValues(event);
+  const hasVar = values.some((value) => textIncludes(value, ['var', 'video assistant']));
+  const hasOffside = values.some((value) => textIncludes(value, ['offside']));
+  return hasVar && hasOffside;
+};
+
+const eventLooksLikeDisallowedGoal = (event) => {
+  const values = getEventTextValues(event);
+  const hasVar = eventHasVarSignal(event);
+  const hasGoal = values.some((value) => textIncludes(value, ['goal']));
+  const hasDisallowed = values.some((value) => textIncludes(value, ['disallow', 'cancel', 'annul', 'overturn', 'ruled out']));
+  return hasVar && hasGoal && hasDisallowed;
+};
+
+const eventLooksLikePenaltyReview = (event) => {
+  const values = getEventTextValues(event);
+  const hasVar = eventHasVarSignal(event);
+  const hasPenalty = values.some((value) => textIncludes(value, ['penalty', 'spot kick']));
+  return hasVar && hasPenalty;
+};
+
+const eventLooksLikeRedCardReview = (event) => {
+  const values = getEventTextValues(event);
+  const hasVar = eventHasVarSignal(event);
+  const hasCard = values.some((value) => textIncludes(value, ['red card', 'serious foul', 'violent conduct', 'send off', 'sent off']));
+  return hasVar && hasCard;
+};
+
+const deriveVerdict = (timeline, marketRule) => {
   const events = timeline?.timeline || timeline?.sport_event_timeline || [];
   if (!Array.isArray(events)) {
     throw new Error('Sportradar timeline response did not include a timeline array.');
   }
 
-  return events.some(eventLooksLikeVarOffside);
+  switch (marketRule.eventType) {
+    case 'var_confirmed_offside':
+      return events.some(eventLooksLikeVarOffside);
+    case 'goal_disallowed_after_var':
+      return events.some(eventLooksLikeDisallowedGoal);
+    case 'penalty_review':
+      return events.some(eventLooksLikePenaltyReview);
+    case 'red_card_review':
+      return events.some(eventLooksLikeRedCardReview);
+    case 'two_or_more_var_reviews':
+      return events.filter(eventHasVarSignal).length >= 2;
+    default:
+      throw new Error(`Unsupported market event type: ${marketRule.eventType}`);
+  }
 };
 
 const requestProofFromBackend = async ({ playId, isOffside, dataHash, timeline }) => {
@@ -131,31 +202,42 @@ export default async function handler(req, res) {
 
   try {
     const { playId } = req.body || {};
-    if (!Number.isInteger(Number(playId))) {
+    const normalizedPlayId = Number(playId);
+    if (!Number.isInteger(normalizedPlayId)) {
       jsonResponse(res, 400, { error: 'playId must be an integer.' });
       return;
     }
 
+    const marketRule = MARKET_RULES[normalizedPlayId];
+    if (!marketRule) {
+      jsonResponse(res, 400, {
+        error: `No proven market rule configured for playId ${normalizedPlayId}.`
+      });
+      return;
+    }
+
     const sportEventMap = parseSportEventMap();
-    const sportEventId = sportEventMap[String(playId)];
+    const sportEventId = sportEventMap[String(normalizedPlayId)];
     if (!sportEventId) {
       jsonResponse(res, 400, {
-        error: `No Sportradar sport_event_id configured for playId ${playId}.`
+        error: `No Sportradar sport_event_id configured for playId ${normalizedPlayId}.`
       });
       return;
     }
 
     const timeline = await fetchSportradarTimeline(sportEventId);
-    const isOffside = deriveVerdict(timeline);
+    const isOffside = deriveVerdict(timeline, marketRule);
     const dataHash = toDataHash({
-      playId: Number(playId),
+      playId: normalizedPlayId,
       sportEventId,
       source: 'sportradar-soccer-v4-timeline',
+      eventType: marketRule.eventType,
+      resolutionRule: marketRule.label,
       timeline
     });
 
     const proof = await requestProofFromBackend({
-      playId: Number(playId),
+      playId: normalizedPlayId,
       isOffside,
       dataHash,
       timeline
@@ -164,6 +246,8 @@ export default async function handler(req, res) {
     jsonResponse(res, 200, {
       isOffside,
       dataHash,
+      eventType: marketRule.eventType,
+      resolutionRule: marketRule.label,
       publicValues: proof.publicValues,
       proofBytes: proof.proofBytes
     });

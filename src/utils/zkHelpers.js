@@ -59,6 +59,8 @@ export const requestZKProof = async ({ playId }) => {
     playId,
     isOffside: proof.isOffside,
     dataHash: proof.dataHash,
+    eventType: proof.eventType,
+    resolutionRule: proof.resolutionRule,
     publicValues: proof.publicValues,
     proofBytes: proof.proofBytes
   };
@@ -70,7 +72,8 @@ export const requestZKProof = async ({ playId }) => {
 export const getSP1ProofLogs = (playId, proof) => {
   return [
     `[PROVER] Received proof for playId=${playId}.`,
-    `[PROVER] Verdict output: isOffside=${proof.isOffside}.`,
+    `[PROVER] Resolution rule: ${proof.resolutionRule || 'configured proven market rule'}.`,
+    `[PROVER] Verified outcome: ${proof.isOffside ? 'YES' : 'NO'}.`,
     `[PROVER] Match data commitment: ${proof.dataHash}.`,
     `[PROVER] Public values ready for on-chain verification.`
   ];

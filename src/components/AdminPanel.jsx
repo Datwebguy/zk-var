@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useAppStore } from '../store/useAppStore';
+import { PROVEN_WORLD_CUP_MARKETS } from '../config/provenMarkets';
 import { PlusCircle, Wrench, Clock, HelpCircle, FileText, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 export const AdminPanel = () => {
   const { createPoolAndDispute, cancelPool, loading, contractOwner } = usePrediction();
   const { userAddress, walletConnected, addNotification, predictionPools, disputes } = useAppStore();
 
-  const [playId, setPlayId] = useState('104');
-  const [poolId, setPoolId] = useState('4');
-  const [question, setQuestion] = useState('Will the FIFA World Cup 2026 opening match include a VAR offside overturn?');
-  const [description, setDescription] = useState('FIFA World Cup 2026 opening match. Market resolves YES if any goal or major attacking phase is overturned for offside by VAR; otherwise resolves NO.');
+  const firstMarket = PROVEN_WORLD_CUP_MARKETS[0];
+  const [selectedPreset, setSelectedPreset] = useState(firstMarket.playId.toString());
+  const [playId, setPlayId] = useState(firstMarket.playId.toString());
+  const [poolId, setPoolId] = useState(firstMarket.poolId.toString());
+  const [question, setQuestion] = useState(firstMarket.question);
+  const [description, setDescription] = useState(firstMarket.description);
   const [duration, setDuration] = useState('86400');
   const [retirePoolId, setRetirePoolId] = useState('3');
 
@@ -33,6 +36,17 @@ export const AdminPanel = () => {
     }
     return Math.max(100, ...Array.from(usedPlayIds)) + 1;
   }, [usedPlayIds]);
+
+  const applyPreset = (presetPlayId) => {
+    setSelectedPreset(presetPlayId);
+    const preset = PROVEN_WORLD_CUP_MARKETS.find((market) => market.playId.toString() === presetPlayId);
+    if (!preset) return;
+
+    setPlayId(preset.playId.toString());
+    setPoolId(preset.poolId.toString());
+    setQuestion(preset.question);
+    setDescription(preset.description);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -121,6 +135,7 @@ export const AdminPanel = () => {
               onClick={() => {
                 setPoolId(nextPoolId.toString());
                 setPlayId(nextPlayId.toString());
+                setSelectedPreset('');
               }}
             >
               Use next IDs: Pool {nextPoolId} / Play {nextPlayId}
@@ -156,6 +171,22 @@ export const AdminPanel = () => {
             </div>
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <label className="text-zinc-500 flex items-center gap-1"><FileText size={12} /> Proven Market Preset:</label>
+            <select
+              value={selectedPreset}
+              onChange={(e) => applyPreset(e.target.value)}
+              className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#00F5FF] focus:outline-none tracking-wide"
+            >
+              <option value="">Custom proven-outcome market</option>
+              {PROVEN_WORLD_CUP_MARKETS.map((market) => (
+                <option key={market.playId} value={market.playId}>
+                  Pool {market.poolId} / Play {market.playId}: {market.question}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Primary configuration parameters */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -163,7 +194,10 @@ export const AdminPanel = () => {
               <input
                 type="number"
                 value={playId}
-                onChange={(e) => setPlayId(e.target.value)}
+                onChange={(e) => {
+                  setPlayId(e.target.value);
+                  setSelectedPreset('');
+                }}
                 className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#A8FF35] focus:outline-none tracking-wide"
                 required
               />
@@ -174,7 +208,10 @@ export const AdminPanel = () => {
               <input
                 type="number"
                 value={poolId}
-                onChange={(e) => setPoolId(e.target.value)}
+                onChange={(e) => {
+                  setPoolId(e.target.value);
+                  setSelectedPreset('');
+                }}
                 className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#A8FF35] focus:outline-none tracking-wide"
                 required
               />
@@ -202,7 +239,10 @@ export const AdminPanel = () => {
             <input
               type="text"
               value={question}
-              onChange={(e) => setQuestion(e.target.value)}
+              onChange={(e) => {
+                setQuestion(e.target.value);
+                setSelectedPreset('');
+              }}
               placeholder="e.g. Will the FIFA World Cup 2026 opening match include a VAR offside overturn?"
               className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#A8FF35] focus:outline-none"
               required
@@ -214,7 +254,10 @@ export const AdminPanel = () => {
             <label className="text-zinc-500 flex items-center gap-1"><FileText size={12} /> Referee Dispute Description (VAR Context):</label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                setSelectedPreset('');
+              }}
               placeholder="e.g. FIFA World Cup 2026 opening match. Resolves YES if VAR overturns any attacking phase for offside."
               rows={2}
               className="bg-black/40 border border-zinc-800 rounded px-3 py-2 text-white focus:border-[#A8FF35] focus:outline-none resize-none"
