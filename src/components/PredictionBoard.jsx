@@ -9,7 +9,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
 
   const [selectedPoolId, setSelectedPoolId] = useState(1);
   const [selectedOutcome, setSelectedOutcome] = useState(1); // 1 = Yes (Valid), 2 = No (Invalid)
-  const [stakeAmount, setStakeAmount] = useState('0.1');
+  const [stakeAmount, setStakeAmount] = useState('0.015');
 
   // Static pre-transaction calculations
   const visiblePredictionPools = predictionPools.filter((pool) => !pool.hiddenFromMarkets);
@@ -372,15 +372,15 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
               </div>
               <input
                 type="range"
-                min="0.05"
+                min="0.015"
                 max="2.5"
-                step="0.05"
+                step="0.005"
                 value={stakeAmount}
                 onChange={(e) => setStakeAmount(e.target.value)}
                 className="neon-range-slider"
               />
               <div className="flex justify-between text-3xs font-mono text-zinc-600">
-                <span>0.05 OKB</span>
+                <span>0.015 OKB</span>
                 <span>2.5 OKB</span>
               </div>
 

@@ -12,7 +12,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   const { userAddress, contractOwner } = useAppStore();
 
   const [voteChoice, setVoteChoice] = useState(1); // Default to Choice 1: Valid
-  const [stakeAmount, setStakeAmount] = useState('0.25'); // Default stake of 0.25 OKB
+  const [stakeAmount, setStakeAmount] = useState('0.015');
 
   const dispute = disputes.find(d => d.playId === activePlayId) || disputes[0];
   const userVote = dispute ? userDisputeVotes[dispute.playId] : null;
@@ -143,15 +143,15 @@ export const JuryVote = ({ activePlayId = 101 }) => {
               </div>
               <input
                 type="range"
-                min="0.05"
+                min="0.015"
                 max="5.0"
-                step="0.05"
+                step="0.005"
                 value={stakeAmount}
                 onChange={(e) => setStakeAmount(e.target.value)}
                 className="neon-range-slider"
               />
               <div className="flex justify-between text-3xs font-mono text-zinc-600">
-                <span>0.05 OKB</span>
+                <span>0.015 OKB</span>
                 <span>5.0 OKB</span>
               </div>
 
