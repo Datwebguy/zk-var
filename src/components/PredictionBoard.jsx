@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { usePrediction } from '../hooks/usePrediction';
 import { useWallet } from '../hooks/useWallet';
+import { PROVEN_WORLD_CUP_MARKETS } from '../config/provenMarkets';
 import { TrendingUp, HelpCircle, AlertCircle, Coins } from 'lucide-react';
 
 export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const { predictionPools, userPoolBets, placePrediction, claimPayout, claimRefund, loading } = usePrediction();
   const { walletConnected, balance, balanceReady, balanceLoading, connectWallet } = useWallet();
 
-  const [selectedPoolId, setSelectedPoolId] = useState(1);
+  const provenPoolIds = new Set(PROVEN_WORLD_CUP_MARKETS.map((market) => market.poolId));
+  const [selectedPoolId, setSelectedPoolId] = useState(PROVEN_WORLD_CUP_MARKETS[0].poolId);
   const [selectedOutcome, setSelectedOutcome] = useState(1);
   const [stakeAmount, setStakeAmount] = useState('0.015');
 
-  const visiblePredictionPools = predictionPools;
+  const visiblePredictionPools = predictionPools.filter((pool) => provenPoolIds.has(Number(pool.poolId)));
   const selectedPool = visiblePredictionPools.find(p => p.poolId === selectedPoolId) || visiblePredictionPools[0];
   const poolStakedOutcome1 = selectedPool ? parseFloat(selectedPool.stakedOutcome1) || 0 : 0;
   const poolStakedOutcome2 = selectedPool ? parseFloat(selectedPool.stakedOutcome2) || 0 : 0;

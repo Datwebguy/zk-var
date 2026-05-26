@@ -84,11 +84,11 @@ The default market set focuses on proven referee-review outcomes for Mexico vs S
 
 | Pool | Play | Proven outcome |
 | --- | --- | --- |
-| `1` | `101` | VAR-confirmed offside decision |
-| `2` | `102` | Goal disallowed after VAR review |
-| `3` | `103` | Penalty decision reviewed by VAR |
-| `4` | `104` | Red-card VAR review |
-| `5` | `105` | Two or more VAR reviews |
+| `3` | `103` | VAR-confirmed offside decision |
+| `4` | `104` | Goal disallowed after VAR review |
+| `5` | `105` | Penalty decision reviewed by VAR |
+| `6` | `106` | Red-card VAR review |
+| `7` | `107` | Two or more VAR reviews |
 
 The dApp supports:
 
@@ -141,7 +141,7 @@ SPORTRADAR_API_KEY=your_sportradar_key
 SPORTRADAR_ACCESS_LEVEL=trial
 SPORTRADAR_LANGUAGE=en
 SPORTRADAR_FORMAT=json
-SPORTRADAR_SPORT_EVENT_MAP={"101":"sr:sport_event:66456904","102":"sr:sport_event:66456904","103":"sr:sport_event:66456904","104":"sr:sport_event:66456904","105":"sr:sport_event:66456904"}
+SPORTRADAR_SPORT_EVENT_MAP={"opening_match":"sr:sport_event:66456904","103":"sr:sport_event:66456904","104":"sr:sport_event:66456904","105":"sr:sport_event:66456904","106":"sr:sport_event:66456904","107":"sr:sport_event:66456904"}
 SP1_PROVER_URL=https://your-sp1-prover.example.com
 ```
 

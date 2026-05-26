@@ -4,23 +4,23 @@ const DEFAULT_LANGUAGE = 'en';
 const DEFAULT_FORMAT = 'json';
 
 const MARKET_RULES = {
-  101: {
+  103: {
     eventType: 'var_confirmed_offside',
     label: 'VAR-confirmed offside decision'
   },
-  102: {
+  104: {
     eventType: 'goal_disallowed_after_var',
     label: 'goal disallowed after VAR review'
   },
-  103: {
+  105: {
     eventType: 'penalty_review',
     label: 'penalty decision reviewed by VAR'
   },
-  104: {
+  106: {
     eventType: 'red_card_review',
     label: 'red-card VAR review'
   },
-  105: {
+  107: {
     eventType: 'two_or_more_var_reviews',
     label: 'two or more VAR reviews'
   }
@@ -217,7 +217,7 @@ export default async function handler(req, res) {
     }
 
     const sportEventMap = parseSportEventMap();
-    const sportEventId = sportEventMap[String(normalizedPlayId)];
+    const sportEventId = sportEventMap[String(normalizedPlayId)] || sportEventMap.opening_match || sportEventMap['101'];
     if (!sportEventId) {
       jsonResponse(res, 400, {
         error: `No Sportradar sport_event_id configured for playId ${normalizedPlayId}.`
