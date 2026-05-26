@@ -28,18 +28,21 @@ export const xLayer = defineChain({
 
 export const queryClient = new QueryClient();
 
-const projectId = import.meta.env.VITE_REOWN_PROJECT_ID || 'demo-zk-var-local';
+const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
+if (!projectId) {
+  console.error('VITE_REOWN_PROJECT_ID is not configured. WalletConnect/Reown wallet modal may not initialize.');
+}
 const networks = [xLayer];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,
-  projectId
+  projectId: projectId || ''
 });
 
 createAppKit({
   adapters: [wagmiAdapter],
   networks,
-  projectId,
+  projectId: projectId || '',
   defaultNetwork: xLayer,
   metadata: {
     name: 'ZK-VAR',

@@ -8,17 +8,8 @@ import { ethers } from 'ethers';
  * @param dataHash The committed hash of the match/event data used by the SP1 guest.
  */
 export const encodePublicValues = (playId, isOffside, dataHash) => {
-  try {
-    const coder = ethers.AbiCoder.defaultAbiCoder();
-    return coder.encode(['uint256', 'bool', 'bytes32'], [playId, isOffside, dataHash]);
-  } catch (error) {
-    console.error("Failed to encode ZK public values:", error);
-    // Fallback safe manual EVM padding if coder fails.
-    const paddedPlayId = playId.toString(16).padStart(64, '0');
-    const paddedIsOffside = (isOffside ? '1' : '0').padStart(64, '0');
-    const paddedDataHash = dataHash.replace(/^0x/, '').padStart(64, '0');
-    return `0x${paddedPlayId}${paddedIsOffside}${paddedDataHash}`;
-  }
+  const coder = ethers.AbiCoder.defaultAbiCoder();
+  return coder.encode(['uint256', 'bool', 'bytes32'], [playId, isOffside, dataHash]);
 };
 
 /**
@@ -60,15 +51,15 @@ export const requestZKProof = async ({ playId }) => {
     throw new Error('Prover API response is missing hex proofBytes.');
   }
 
-  if (proof.publicValues && !hexPattern.test(proof.publicValues)) {
-    throw new Error('Prover API response has invalid publicValues hex.');
+  if (!hexPattern.test(proof.publicValues || '')) {
+    throw new Error('Prover API response is missing valid publicValues hex.');
   }
 
   return {
     playId,
     isOffside: proof.isOffside,
     dataHash: proof.dataHash,
-    publicValues: proof.publicValues || encodePublicValues(playId, proof.isOffside, proof.dataHash),
+    publicValues: proof.publicValues,
     proofBytes: proof.proofBytes
   };
 };

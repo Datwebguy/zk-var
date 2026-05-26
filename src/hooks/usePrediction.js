@@ -59,16 +59,6 @@ const ensurePositiveAmount = (amount) => {
 
 const getRevertMessage = (error) => decodeContractError(error);
 
-const HIDDEN_NON_X_CUP_MARKET_PATTERNS = [
-  'champions league',
-  'psg',
-  'arsenal'
-];
-
-const shouldShowMarket = (question = '') => (
-  !HIDDEN_NON_X_CUP_MARKET_PATTERNS.some((pattern) => question.toLowerCase().includes(pattern))
-);
-
 const fetchMarketSnapshot = async () => {
   const response = await fetch('/api/markets');
   const bodyText = await response.text();
@@ -220,20 +210,18 @@ export const usePrediction = () => {
           const details = await contract.getPoolDetails(id);
           const questionText = details[0];
           const closingTime = Number(details[1]);
-          if (closingTime === 0) return null;
+          if (closingTime === 0 || !questionText?.trim()) return null;
 
           return {
             poolId: id,
-            question: questionText && questionText.trim() !== "" ? questionText : `Custom Arena Pool #${id}`,
+            question: questionText.trim(),
             closingTime,
             status: Number(details[2]),
             winningOutcome: Number(details[3]),
             totalStaked: formatEtherVal(details[4]),
             stakedOutcome1: formatEtherVal(details[5]),
             stakedOutcome2: formatEtherVal(details[6]),
-            disputeId: 100 + id,
-            match: id <= 2 ? "World Cup Classic" : "X Cup World Cup Market",
-            hiddenFromMarkets: !shouldShowMarket(questionText)
+            disputeId: 100 + id
           };
         } catch (error) {
           console.warn(`Pool ${id} fetch error:`, error);
@@ -282,12 +270,12 @@ export const usePrediction = () => {
           const poolId = Number(details[0]);
           const descText = details[1];
           const votingEndTime = Number(details[2]);
-          if (votingEndTime === 0) return null;
+          if (votingEndTime === 0 || !descText?.trim()) return null;
 
           return {
             playId: id,
             predictionPoolId: poolId,
-            description: descText && descText.trim() !== "" ? descText : `Custom Play Review #${id}`,
+            description: descText.trim(),
             votingEndTime,
             status: Number(details[3]),
             totalJuryStaked: formatEtherVal(details[4]),
@@ -296,8 +284,7 @@ export const usePrediction = () => {
             votesInconclusive: formatEtherVal(details[7]),
             exists: true,
             verdict: Number(details[8]),
-            resolutionTime: Number(details[9]),
-            decisionType: id % 2 === 1 ? "World Cup VAR Offside" : "World Cup Boundary Review"
+            resolutionTime: Number(details[9])
           };
         } catch (error) {
           console.warn(`Dispute ${id} fetch error:`, error);

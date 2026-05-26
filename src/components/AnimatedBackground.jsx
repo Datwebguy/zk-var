@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export const AnimatedBackground = () => {
   const canvasRef = useRef(null);
@@ -88,11 +88,6 @@ export const AnimatedBackground = () => {
 
     // Grid rendering parameters
     const gridSpacing = 45;
-    const gridColor1 = 'rgba(168, 255, 53, 0.025)'; // Neon Green grid line
-    const gridColor2 = 'rgba(0, 245, 255, 0.012)';  // ZK Cyan helper grid
-
-    console.log('canvas running');
-
     let lastTime = 0;
     const fpsInterval = 1000 / 60; // Locked 60fps throttle
 

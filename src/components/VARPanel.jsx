@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Shield, Target, Play, Zap, Cpu } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Shield, Target, Zap, Cpu } from 'lucide-react';
 
 export const VARPanel = ({ activePlayId = 101 }) => {
   const canvasRef = useRef(null);

@@ -18,9 +18,9 @@ export const ZKProver = () => {
 
   // Default calm logs shown when the prover is idle (waiting for a trigger)
   const defaultLogs = [
-    "[SYSTEM] SP1 RISC-V Verifiable Inference engine loaded.",
+    "[SYSTEM] SP1 proof pipeline configured.",
     `[SYSTEM] Verifier Contract: ${CONTRACT_ADDRESSES.ZKVerifier}`,
-    `[SYSTEM] X Layer Verifier Node: ONLINE (Chain ID: ${XLAYER_CHAIN_ID})`,
+    `[SYSTEM] Target Network: X Layer Mainnet (Chain ID: ${XLAYER_CHAIN_ID})`,
     "[SYSTEM] Standing by for Fan Jury Dispute triggers..."
   ];
 

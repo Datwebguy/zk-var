@@ -66,7 +66,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
         </p>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-zinc-950/60 border border-zinc-800 text-glow-cyan text-[#00F5FF] text-2xs font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-[#00F5FF] animate-ping" />
-          <span>LISTENING TO X LAYER TESTNET</span>
+          <span>LISTENING TO X LAYER MAINNET</span>
         </div>
       </div>
     );

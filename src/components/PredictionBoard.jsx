@@ -12,7 +12,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const [stakeAmount, setStakeAmount] = useState('0.015');
 
   // Static pre-transaction calculations
-  const visiblePredictionPools = predictionPools.filter((pool) => !pool.hiddenFromMarkets);
+  const visiblePredictionPools = predictionPools;
   const selectedPool = visiblePredictionPools.find(p => p.poolId === selectedPoolId) || visiblePredictionPools[0];
   const poolStakedOutcome1 = selectedPool ? parseFloat(selectedPool.stakedOutcome1) || 0 : 0;
   const poolStakedOutcome2 = selectedPool ? parseFloat(selectedPool.stakedOutcome2) || 0 : 0;
@@ -33,6 +33,17 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const isInsufficientBalance = walletConnected && balanceReady && (userStake > userBalance);
 
   const formatEstimatedOkb = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) return '0.00';
+
+    const decimals = parsed < 0.1 ? 3 : 2;
+    return parsed
+      .toFixed(decimals)
+      .replace(/(\.\d*?[1-9])0+$/, '$1')
+      .replace(/\.0+$/, '.00');
+  };
+
+  const formatOkbAmount = (value) => {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed <= 0) return '0.00';
 
@@ -92,9 +103,13 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
             <div className="glass-panel p-6 bg-[#121214]/40 flex flex-col items-center justify-center text-center min-h-[220px] relative overflow-hidden" style={{ gridColumn: '1 / -1' }}>
               <div className="absolute inset-0 bg-gradient-to-br from-[#A8FF35]/5 to-transparent pointer-events-none" />
               <TrendingUp size={36} className="text-zinc-600 mb-3 animate-pulse" />
-              <h4 className="font-heading font-bold text-sm text-white mb-1">Connecting to Arena Markets</h4>
+              <h4 className="font-heading font-bold text-sm text-white mb-1">
+                {loading ? 'Connecting to Arena Markets' : 'No Active Pools Found'}
+              </h4>
               <p className="text-3xs text-zinc-500 font-mono max-w-xs leading-normal">
-                Retrieving active prediction pools directly from X Layer smart contracts. Please ensure your network is reachable.
+                {loading
+                  ? 'Retrieving active prediction pools directly from X Layer smart contracts. Please ensure your network is reachable.'
+                  : 'No prediction pool records are currently available from the X Layer contracts.'}
               </p>
             </div>
           ) : (
@@ -141,7 +156,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex flex-col">
                       <span className="all-caps-label mb-1">
-                        {pool.match}
+                        POOL #{pool.poolId}
                       </span>
                       <h4 className="text-sm font-heading font-bold text-white pr-2 leading-snug">
                         {pool.question}
@@ -197,7 +212,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       )}
                       {poolUserHasStake && (
                         <span className={poolUserClaimed ? 'text-zinc-500 font-bold' : 'text-[#00F5FF] font-bold'}>
-                          YOUR STAKE: {poolUserStake.toFixed(2)} OKB {poolUserClaimed && '(CLAIMED)'}
+                          YOUR STAKE: {formatOkbAmount(poolUserStake)} OKB {poolUserClaimed && '(CLAIMED)'}
                         </span>
                       )}
                     </div>
@@ -303,7 +318,7 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
                       <div className="flex justify-between text-zinc-500">
                         <span>YOUR STAKE:</span>
                         <span className="text-white font-bold">
-                          {selectedUserHasStake ? `${selectedUserStake.toFixed(2)} OKB` : '0.00 OKB'}
+                          {selectedUserHasStake ? `${formatOkbAmount(selectedUserStake)} OKB` : '0.00 OKB'}
                         </span>
                       </div>
                       {selectedUserHasStake && (
@@ -407,10 +422,6 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
 
                 {/* Real-time Pre-Transaction Telemetry HUD */}
                 <div className="border border-zinc-800 rounded-lg p-3 bg-black/60 font-mono text-3xs flex flex-col gap-2">
-              <div className="flex justify-between text-zinc-500">
-                <span>ESTIMATED GAS:</span>
-                <span className="text-white tabular-nums">0.00014 OKB</span>
-              </div>
               <div className="flex justify-between text-zinc-500">
                 <span>ESTIMATED RETURN:</span>
                 <span className="text-glow-green text-[#A8FF35] tabular-nums font-bold">~ {calculatedPayout} OKB</span>
