@@ -97,7 +97,8 @@ export const useAppStore = create((set, get) => ({
           const isOffside = Boolean(result?.isOffside);
           set({
             zkProofState: 'verified',
-            zkVerifiedHash: txHash
+            zkVerifiedHash: txHash,
+            isZKProving: false
           });
 
           set((state) => {

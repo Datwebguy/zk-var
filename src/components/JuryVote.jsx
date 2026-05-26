@@ -15,6 +15,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
   const [stakeAmount, setStakeAmount] = useState('0.015');
 
   const dispute = disputes.find(d => d.playId === activePlayId) || disputes[0];
+  const selectedPlayId = dispute?.playId ?? activePlayId;
   const userVote = dispute ? userDisputeVotes[dispute.playId] : null;
   const userVoteStake = parseFloat(userVote?.stake || '0') || 0;
   const userHasVote = userVoteStake > 0;
@@ -37,11 +38,11 @@ export const JuryVote = ({ activePlayId = 101 }) => {
       return;
     }
     if (isInsufficientBalance) return;
-    await castJuryVote(activePlayId, voteChoice, stakeAmount);
+    await castJuryVote(selectedPlayId, voteChoice, stakeAmount);
   };
 
   const handleTriggerZK = () => {
-    generateAndVerifyProof(activePlayId);
+    generateAndVerifyProof(selectedPlayId);
   };
 
   const getStatusText = (status) => {
@@ -195,7 +196,7 @@ export const JuryVote = ({ activePlayId = 101 }) => {
             </div>
 
             <button
-              onClick={() => claimJuryRewards(activePlayId)}
+              onClick={() => claimJuryRewards(selectedPlayId)}
               disabled={loading || !userHasVote || userVoteClaimed || !userVoteEligible}
               className="neon-btn w-full py-3 mt-1"
             >
@@ -245,13 +246,14 @@ export const JuryVote = ({ activePlayId = 101 }) => {
         {!isClosed && isContractOwner ? (
           <div className="flex flex-col gap-2">
             <button
+              type="button"
               onClick={handleTriggerZK}
               disabled={isZKProving || txLoading}
-              className="w-full bg-transparent border border-[#A8FF35] hover:bg-[#A8FF35]/10 text-[#A8FF35] rounded-lg py-3 font-heading font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 uppercase"
+              className="w-full bg-transparent border border-[#A8FF35] hover:bg-[#A8FF35]/10 text-[#A8FF35] rounded-lg py-3 font-heading font-bold text-xs flex items-center justify-center gap-2 transition-all duration-200 uppercase disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ boxShadow: '0 0 15px rgba(168,255,53,0.1)' }}
             >
               <Sparkles size={14} className="animate-pulse" />
-              Trigger SP1 Verification
+              {isZKProving || txLoading ? 'SP1 Verification Running' : 'Trigger SP1 Verification'}
             </button>
             <span className="text-3xs text-zinc-600 text-center leading-normal">
               Requests a real prover result, then verifies the SP1 proof on-chain.
