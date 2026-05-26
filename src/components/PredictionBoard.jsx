@@ -32,11 +32,22 @@ export const PredictionBoard = ({ onSelectPlay, activePlayId }) => {
   const userBalance = walletConnected ? parseFloat(balance) || 0 : 0.0;
   const isInsufficientBalance = walletConnected && balanceReady && (userStake > userBalance);
 
+  const formatEstimatedOkb = (value) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) return '0.00';
+
+    const decimals = parsed < 0.1 ? 3 : 2;
+    return parsed
+      .toFixed(decimals)
+      .replace(/(\.\d*?[1-9])0+$/, '$1')
+      .replace(/\.0+$/, '.00');
+  };
+
   const estimateReturn = (outcome) => {
     if (!selectedPool || userStake <= 0) return '0.00';
     const winningPool = outcome === 1 ? poolStakedOutcome1 + userStake : poolStakedOutcome2 + userStake;
     if (winningPool <= 0) return '0.00';
-    return ((userStake / winningPool) * newTotal).toFixed(2);
+    return formatEstimatedOkb((userStake / winningPool) * newTotal);
   };
 
   const calculatedPayout = estimateReturn(selectedOutcome);
